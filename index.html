@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Apartman Yönetim Sistemi - 12 Daireli Apartman için Kapsamlı Yönetim Uygulaması">
+    <title>Apartman Yönetim Sistemi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <div class="login-card glass-card">
+                    <div class="login-header">
+                        <div class="logo">
+                            <div class="logo-icon">🏢</div>
+                            <h1>Apartman Yönetim</h1>
+                            <p>12 Daireli Apartman Yönetim Sistemi</p>
+                        </div>
+                    </div>
+
+                    <div class="login-tabs">
+                        <button class="tab-btn active" data-tab="admin">Yönetici</button>
+                        <button class="tab-btn" data-tab="resident">Sakin</button>
+                    </div>
+
+                    <!-- Admin Login Form -->
+                    <form id="admin-login-form" class="login-form active">
+                        <div class="form-group">
+                            <label for="admin-password">Yönetici Şifresi</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">🔐</span>
+                                <input type="password" id="admin-password" placeholder="Şifrenizi girin" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <span>Giriş Yap</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+                        <p class="login-hint">Demo şifre: admin123</p>
+                    </form>
+
+                    <!-- Resident Login Form -->
+                    <form id="resident-login-form" class="login-form">
+                        <div class="form-group">
+                            <label for="apartment-number">Daire Numarası</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">🏠</span>
+                                <select id="apartment-number" required>
+                                    <option value="">Daire seçin...</option>
+                                    <option value="1">Daire 1</option>
+                                    <option value="2">Daire 2</option>
+                                    <option value="3">Daire 3</option>
+                                    <option value="4">Daire 4</option>
+                                    <option value="5">Daire 5</option>
+                                    <option value="6">Daire 6</option>
+                                    <option value="7">Daire 7</option>
+                                    <option value="8">Daire 8</option>
+                                    <option value="9">Daire 9</option>
+                                    <option value="10">Daire 10</option>
+                                    <option value="11">Daire 11</option>
+                                    <option value="12">Daire 12</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <span>Dashboard'a Git</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="login-decoration">
+                    <div class="floating-shape shape-1"></div>
+                    <div class="floating-shape shape-2"></div>
+                    <div class="floating-shape shape-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="page">
+            <nav class="navbar glass-nav">
+                <div class="nav-brand">
+                    <span class="nav-logo">🏢</span>
+                    <span class="nav-title">Yönetici Paneli</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobile-menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="nav-links" id="nav-links">
+                    <a href="#" class="nav-link active" data-section="overview">
+                        <span class="nav-icon">📊</span>
+                        <span>Genel Bakış</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="finance">
+                        <span class="nav-icon">💵</span>
+                        <span>Gelir/Gider</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="electricity">
+                        <span class="nav-icon">⚡</span>
+                        <span>Faturalar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="dues">
+                        <span class="nav-icon">💰</span>
+                        <span>Aidatlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="maintenance">
+                        <span class="nav-icon">🔧</span>
+                        <span>Bakımlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="tasks">
+                        <span class="nav-icon">📋</span>
+                        <span>İş Takibi</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="decisions">
+                        <span class="nav-icon">📝</span>
+                        <span>Kararlar</span>
+                    </a>
+                    <a href="#" class="nav-link logout-link" id="admin-logout">
+                        <span class="nav-icon">🚪</span>
+                        <span>Çıkış</span>
+                    </a>
+                </div>
+            </nav>
+
+            <main class="main-content">
+                <!-- Overview Section -->
+                <section id="overview-section" class="section active">
+                    <div class="section-header">
+                        <h2>Genel Bakış</h2>
+                        <p>Apartman yönetimi özet bilgileri</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card glass-card gradient-1">
+                            <div class="stat-icon">🏠</div>
+                            <div class="stat-info">
+                                <h3 id="total-apartments">12</h3>
+                                <p>Toplam Daire</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card gradient-2">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <h3 id="paid-dues">0</h3>
+                                <p>Ödenen Aidat</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card gradient-3">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-info">
+                                <h3 id="unpaid-dues">0</h3>
+                                <p>Bekleyen Aidat</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card gradient-4">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3 id="total-balance">₺0</h3>
+                                <p>Toplam Bakiye</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card glass-card">
+                            <h3>📋 Son Kararlar</h3>
+                            <div id="recent-decisions" class="recent-list">
+                                <p class="empty-state">Henüz karar eklenmemiş</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-card glass-card">
+                            <h3>🔧 Yaklaşan Bakımlar</h3>
+                            <div id="upcoming-maintenance" class="recent-list">
+                                <p class="empty-state">Yaklaşan bakım yok</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Finance Section (NEW) -->
+                <section id="finance-section" class="section">
+                    <div class="section-header">
+                        <h2>Gelir/Gider Yönetimi</h2>
+                        <button class="btn btn-primary" id="add-transaction-btn">
+                            <span>+ Kayıt Ekle</span>
+                        </button>
+                    </div>
+
+                    <div class="finance-summary glass-card">
+                        <div class="summary-item">
+                            <span class="summary-label">Toplam Gelir:</span>
+                            <span class="summary-value success" id="admin-total-income">₺0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Toplam Gider:</span>
+                            <span class="summary-value warning" id="admin-total-expense">₺0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Net Bakiye:</span>
+                            <span class="summary-value" id="admin-net-balance">₺0</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar glass-card">
+                        <div class="filter-group">
+                            <label>Tür:</label>
+                            <select id="transaction-type-filter">
+                                <option value="all">Tümü</option>
+                                <option value="income">Gelir</option>
+                                <option value="expense">Gider</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Yıl:</label>
+                            <select id="transaction-year-filter">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="transactions-list" class="transactions-list">
+                        <p class="empty-state">Henüz kayıt eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Electricity Bills Section -->
+                <section id="electricity-section" class="section">
+                    <div class="section-header">
+                        <h2>Elektrik Faturaları</h2>
+                        <button class="btn btn-primary" id="add-bill-btn">
+                            <span>+ Fatura Ekle</span>
+                        </button>
+                    </div>
+
+                    <div class="filter-bar glass-card">
+                        <div class="filter-group">
+                            <label>Yıl:</label>
+                            <select id="bill-year-filter">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="bills-list" class="bills-grid">
+                        <p class="empty-state">Henüz fatura eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Dues Management Section -->
+                <section id="dues-section" class="section">
+                    <div class="section-header">
+                        <h2>Aidat Takibi</h2>
+                        <div class="header-actions">
+                            <select id="dues-year-select" class="year-select">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="dues-summary glass-card">
+                        <div class="summary-item">
+                            <span class="summary-label">Toplam Tahsilat:</span>
+                            <span class="summary-value" id="total-collected">₺0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Bekleyen:</span>
+                            <span class="summary-value warning" id="total-pending">₺0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Aylık Aidat:</span>
+                            <input type="number" id="monthly-due-amount" class="due-input" value="500" min="0">
+                            <span>₺</span>
+                        </div>
+                    </div>
+
+                    <div class="dues-table-container glass-card">
+                        <div class="table-scroll">
+                            <table class="dues-table" id="dues-table">
+                                <thead>
+                                    <tr>
+                                        <th>Daire</th>
+                                        <th>Oca</th>
+                                        <th>Şub</th>
+                                        <th>Mar</th>
+                                        <th>Nis</th>
+                                        <th>May</th>
+                                        <th>Haz</th>
+                                        <th>Tem</th>
+                                        <th>Ağu</th>
+                                        <th>Eyl</th>
+                                        <th>Eki</th>
+                                        <th>Kas</th>
+                                        <th>Ara</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dues-table-body">
+                                    <!-- Generated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Maintenance Section (NEW) -->
+                <section id="maintenance-section" class="section">
+                    <div class="section-header">
+                        <h2>Periyodik Bakımlar</h2>
+                        <button class="btn btn-primary" id="add-maintenance-btn">
+                            <span>+ Bakım Ekle</span>
+                        </button>
+                    </div>
+
+                    <div id="maintenance-list" class="maintenance-list">
+                        <p class="empty-state">Henüz bakım kaydı eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Tasks Section (NEW) -->
+                <section id="tasks-section" class="section">
+                    <div class="section-header">
+                        <h2>İş Takibi</h2>
+                        <button class="btn btn-primary" id="add-task-btn">
+                            <span>+ İş Ekle</span>
+                        </button>
+                    </div>
+
+                    <div class="task-filters glass-card">
+                        <button class="filter-btn active" data-filter="all">Tümü</button>
+                        <button class="filter-btn" data-filter="pending">Bekliyor</button>
+                        <button class="filter-btn" data-filter="in_progress">Devam Ediyor</button>
+                        <button class="filter-btn" data-filter="completed">Tamamlandı</button>
+                    </div>
+
+                    <div id="tasks-list" class="tasks-list">
+                        <p class="empty-state">Henüz iş kaydı eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Decisions Section -->
+                <section id="decisions-section" class="section">
+                    <div class="section-header">
+                        <h2>Apartman Kararları</h2>
+                        <button class="btn btn-primary" id="add-decision-btn">
+                            <span>+ Karar Ekle</span>
+                        </button>
+                    </div>
+
+                    <div id="decisions-list" class="decisions-list">
+                        <p class="empty-state">Henüz karar eklenmemiş</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Resident Dashboard -->
+        <div id="resident-dashboard" class="page">
+            <nav class="navbar glass-nav">
+                <div class="nav-brand">
+                    <span class="nav-logo">🏢</span>
+                    <span class="nav-title">Apartman Paneli</span>
+                    <span class="apartment-badge" id="resident-apartment-badge">Daire 1</span>
+                </div>
+                <button class="mobile-menu-btn" id="resident-mobile-menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="nav-links" id="resident-nav-links">
+                    <a href="#" class="nav-link active" data-section="resident-overview">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="resident-bills">
+                        <span class="nav-icon">⚡</span>
+                        <span>Faturalar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="resident-decisions">
+                        <span class="nav-icon">📋</span>
+                        <span>Kararlar</span>
+                    </a>
+                    <a href="#" class="nav-link logout-link" id="resident-logout">
+                        <span class="nav-icon">🚪</span>
+                        <span>Çıkış</span>
+                    </a>
+                </div>
+            </nav>
+
+            <main class="main-content">
+                <!-- Resident Overview - Enhanced Dashboard -->
+                <section id="resident-overview-section" class="section active">
+                    <div class="section-header">
+                        <h2>Hoş Geldiniz!</h2>
+                        <p id="resident-welcome-text">Daire 1 - Apartman bilgileri ve durumu</p>
+                    </div>
+
+                    <!-- Aidat Durumu -->
+                    <div class="resident-stats-grid">
+                        <div class="stat-card glass-card gradient-2 large-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3>Aidat Durumu</h3>
+                                <div id="resident-due-status" class="due-status">
+                                    <span class="status-badge paid">Bu Ay Ödendi ✓</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 1: Aidat Tahsilat + Financial Status -->
+                    <div class="charts-row">
+                        <div class="chart-card glass-card">
+                            <h3>📊 Aidat Tahsilat Durumu</h3>
+                            <div class="chart-container">
+                                <canvas id="dues-collection-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-card">
+                            <h3>📈 Finansal Durum</h3>
+                            <div class="chart-container">
+                                <canvas id="financial-status-chart"></canvas>
+                            </div>
+                            <div class="chart-legend" id="balance-indicator">
+                                <span class="balance-label">Güncel Bakiye:</span>
+                                <span class="balance-value" id="current-balance">₺0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 2: Income/Expense Pie Charts -->
+                    <div class="charts-row">
+                        <div class="chart-card glass-card">
+                            <h3>💵 Gelir Dağılımı</h3>
+                            <div class="chart-container pie-container">
+                                <canvas id="income-pie-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-card">
+                            <h3>💸 Gider Dağılımı</h3>
+                            <div class="chart-container pie-container">
+                                <canvas id="expense-pie-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yıllık Aidat Özeti -->
+                    <div class="resident-dues-card glass-card">
+                        <h3>📅 Yıllık Aidat Özeti (<span id="resident-year">2026</span>)</h3>
+                        <div class="resident-dues-grid" id="resident-dues-grid">
+                            <!-- Generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Bottom Cards: Maintenance + Tasks + Decisions -->
+                    <div class="dashboard-grid-3">
+                        <div class="dashboard-card glass-card">
+                            <h3>🔧 Periyodik Bakımlar</h3>
+                            <div id="resident-maintenance-list" class="compact-list">
+                                <p class="empty-state">Yaklaşan bakım yok</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-card glass-card">
+                            <h3>📋 İş Takibi</h3>
+                            <div id="resident-tasks-list" class="compact-list">
+                                <p class="empty-state">Aktif iş yok</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-card glass-card">
+                            <h3>📝 Son Kararlar</h3>
+                            <div id="resident-recent-decisions" class="compact-list">
+                                <p class="empty-state">Henüz karar eklenmemiş</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Resident Bills -->
+                <section id="resident-bills-section" class="section">
+                    <div class="section-header">
+                        <h2>Elektrik Faturaları</h2>
+                        <p>Apartman ortak alan elektrik faturaları</p>
+                    </div>
+
+                    <div id="resident-bills-list" class="bills-grid">
+                        <p class="empty-state">Henüz fatura eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Resident Decisions -->
+                <section id="resident-decisions-section" class="section">
+                    <div class="section-header">
+                        <h2>Apartman Kararları</h2>
+                        <p>Yönetim kurulu kararları</p>
+                    </div>
+
+                    <div id="resident-decisions-list" class="decisions-list">
+                        <p class="empty-state">Henüz karar eklenmemiş</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Modals -->
+        <!-- Add Bill Modal -->
+        <div class="modal" id="bill-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="bill-modal-title">Fatura Ekle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="bill-form" class="modal-form">
+                    <input type="hidden" id="bill-id">
+                    <div class="form-group">
+                        <label for="bill-month">Ay</label>
+                        <select id="bill-month" required>
+                            <option value="1">Ocak</option>
+                            <option value="2">Şubat</option>
+                            <option value="3">Mart</option>
+                            <option value="4">Nisan</option>
+                            <option value="5">Mayıs</option>
+                            <option value="6">Haziran</option>
+                            <option value="7">Temmuz</option>
+                            <option value="8">Ağustos</option>
+                            <option value="9">Eylül</option>
+                            <option value="10">Ekim</option>
+                            <option value="11">Kasım</option>
+                            <option value="12">Aralık</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-year">Yıl</label>
+                        <select id="bill-year" required>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-amount">Tutar (₺)</label>
+                        <input type="number" id="bill-amount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-file">Fatura Dosyası (PDF/Resim)</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="bill-file" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="file-upload-label">
+                                <span class="upload-icon">📎</span>
+                                <span class="upload-text">Dosya seçin veya sürükleyin</span>
+                            </div>
+                        </div>
+                        <div id="bill-file-preview" class="file-preview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-notes">Notlar</label>
+                        <textarea id="bill-notes" placeholder="Opsiyonel notlar..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Decision Modal -->
+        <div class="modal" id="decision-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="decision-modal-title">Karar Ekle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="decision-form" class="modal-form">
+                    <input type="hidden" id="decision-id">
+                    <div class="form-group">
+                        <label for="decision-title">Karar Başlığı</label>
+                        <input type="text" id="decision-title" placeholder="Örn: Asansör bakım kararı" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="decision-date">Karar Tarihi</label>
+                        <input type="date" id="decision-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="decision-content">Karar İçeriği</label>
+                        <textarea id="decision-content" rows="5" placeholder="Karar detaylarını yazın..."
+                            required></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Transaction Modal (NEW) -->
+        <div class="modal" id="transaction-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="transaction-modal-title">Gelir/Gider Ekle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="transaction-form" class="modal-form">
+                    <input type="hidden" id="transaction-id">
+                    <div class="form-group">
+                        <label for="transaction-type">Tür</label>
+                        <select id="transaction-type" required>
+                            <option value="income">Gelir</option>
+                            <option value="expense">Gider</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-category">Kategori</label>
+                        <select id="transaction-category" required>
+                            <optgroup label="Gelir" id="income-categories">
+                                <option value="aidat">Aidat</option>
+                                <option value="kira">Kira Geliri</option>
+                                <option value="diger_gelir">Diğer Gelir</option>
+                            </optgroup>
+                            <optgroup label="Gider" id="expense-categories">
+                                <option value="elektrik">Elektrik</option>
+                                <option value="su">Su</option>
+                                <option value="dogalgaz">Doğalgaz</option>
+                                <option value="temizlik">Temizlik</option>
+                                <option value="bakim">Bakım/Onarım</option>
+                                <option value="guvenlik">Güvenlik</option>
+                                <option value="sigorta">Sigorta</option>
+                                <option value="diger_gider">Diğer Gider</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-amount">Tutar (₺)</label>
+                        <input type="number" id="transaction-amount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-date">Tarih</label>
+                        <input type="date" id="transaction-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-description">Açıklama</label>
+                        <textarea id="transaction-description" placeholder="Açıklama girin..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Maintenance Modal (NEW) -->
+        <div class="modal" id="maintenance-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="maintenance-modal-title">Bakım Ekle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="maintenance-form" class="modal-form">
+                    <input type="hidden" id="maintenance-id">
+                    <div class="form-group">
+                        <label for="maintenance-title">Bakım Başlığı</label>
+                        <input type="text" id="maintenance-title" placeholder="Örn: Asansör bakımı" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance-date">Planlanan Tarih</label>
+                        <input type="date" id="maintenance-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance-description">Açıklama</label>
+                        <textarea id="maintenance-description" rows="3"
+                            placeholder="Bakım detaylarını yazın..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance-status">Durum</label>
+                        <select id="maintenance-status" required>
+                            <option value="pending">Bekliyor</option>
+                            <option value="completed">Tamamlandı</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Task Modal (NEW) -->
+        <div class="modal" id="task-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="task-modal-title">İş Ekle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="task-form" class="modal-form">
+                    <input type="hidden" id="task-id">
+                    <div class="form-group">
+                        <label for="task-title">İş Başlığı</label>
+                        <input type="text" id="task-title" placeholder="Örn: Bahçe düzenlemesi" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-description">Kısa Açıklama</label>
+                        <input type="text" id="task-description" placeholder="Kısa açıklama..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-detail">Detaylı Açıklama</label>
+                        <textarea id="task-detail" rows="4" placeholder="Detaylı bilgi..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="task-status">Durum</label>
+                            <select id="task-status" required>
+                                <option value="pending">Bekliyor</option>
+                                <option value="in_progress">Devam Ediyor</option>
+                                <option value="completed">Tamamlandı</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-priority">Öncelik</label>
+                            <select id="task-priority" required>
+                                <option value="low">Düşük</option>
+                                <option value="medium">Orta</option>
+                                <option value="high">Yüksek</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Task Detail Modal (NEW) -->
+        <div class="modal" id="task-detail-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>İş Detayı</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" id="task-detail-content">
+                    <!-- Dynamically filled -->
+                </div>
+            </div>
+        </div>
+
+        <!-- View Bill Modal -->
+        <div class="modal" id="view-bill-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card large-modal">
+                <div class="modal-header">
+                    <h3>Fatura Görüntüle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="bill-viewer" class="bill-viewer">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
