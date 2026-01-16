@@ -1715,6 +1715,7 @@ window.deleteBill = deleteBill;
 window.toggleDue = toggleDue;
 window.editDecision = editDecision;
 window.deleteDecision = deleteDecision;
+window.viewDecisionDetail = viewDecisionDetail; // Resident panel decision popup
 window.editMaintenance = editMaintenance;
 window.deleteMaintenance = deleteMaintenance;
 window.editTask = editTask;
