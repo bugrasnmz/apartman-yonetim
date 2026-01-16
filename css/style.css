@@ -2284,11 +2284,194 @@ tbody tr:hover {
     }
 }
 
+/* ===== Mobile Styles (768px and below) ===== */
 @media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
+    :root {
+        --sidebar-width: 100%;
     }
 
+    /* Navbar becomes overlay on mobile */
+    .navbar,
+    .glass-nav {
+        width: 75%;
+        max-width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .navbar.active,
+    .glass-nav .nav-links.active {
+        transform: translateX(0);
+    }
+
+    /* Nav links overlay for resident dashboard */
+    #resident-dashboard .nav-links,
+    #admin-dashboard .nav-links {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 75%;
+        max-width: 280px;
+        height: 100vh;
+        background: var(--bg-sidebar);
+        flex-direction: column;
+        padding: 24px 16px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    #resident-dashboard .nav-links.active,
+    #admin-dashboard .nav-links.active {
+        transform: translateX(0);
+    }
+
+    /* Mobile menu button visible */
+    .mobile-menu-btn {
+        display: flex !important;
+        flex-direction: column;
+        gap: 5px;
+        padding: 10px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    .mobile-menu-btn span {
+        width: 24px;
+        height: 2px;
+        background: var(--text-light);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    /* Nav brand adjustments */
+    .nav-brand {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .nav-title {
+        font-size: 16px;
+    }
+
+    .apartment-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    /* Main content full width */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 80px 16px 24px 16px;
+        width: 100%;
+    }
+
+    /* Section header */
+    .section-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .section-header h2 {
+        font-size: 20px;
+    }
+
+    /* Stats grid single column */
+    .stats-grid,
+    .finance-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .resident-stats-grid {
+        grid-template-columns: 1fr;
+        margin-bottom: 24px !important;
+    }
+
+    /* Chart rows single column */
+    .charts-row,
+    [style*="grid-template-columns: repeat(2"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    /* Dashboard grid single column for 3 items */
+    .dashboard-grid-3,
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+
+    /* Charts smaller height */
+    .chart-wrapper {
+        height: 200px !important;
+    }
+
+    /* Timeline horizontal scroll */
+    .dues-timeline {
+        overflow-x: auto;
+        padding-bottom: 16px;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px;
+    }
+
+    .dues-timeline::before {
+        width: calc(12 * 60px);
+    }
+
+    .timeline-marker {
+        flex-shrink: 0;
+        min-width: 50px;
+    }
+
+    .pin-body {
+        width: 36px;
+        height: 36px;
+        font-size: 12px;
+    }
+
+    .pin-tail {
+        border-width: 8px 8px 0 8px;
+    }
+
+    .timeline-dot {
+        width: 10px;
+        height: 10px;
+    }
+
+    .timeline-label {
+        font-size: 10px;
+    }
+
+    /* Chart summary wrap */
+    .chart-summary {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .chart-stat {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 120px;
+    }
+
+    /* Transactions container padding */
+    .transactions-container {
+        padding: 16px;
+    }
+
+    /* Compact items */
+    .compact-item {
+        padding: 12px 16px;
+    }
+
+    /* Form adjustments */
     .form-row {
         grid-template-columns: 1fr;
     }
@@ -2305,8 +2488,35 @@ tbody tr:hover {
         padding: 32px 24px;
         margin: 16px;
     }
+
+    /* Finance stat cards smaller */
+    .finance-stat-card {
+        padding: 16px;
+    }
+
+    .stat-card-value {
+        font-size: 20px;
+    }
+
+    /* Chart header */
+    .chart-header h3 {
+        font-size: 16px;
+    }
+
+    .chart-legend {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Modal full width on mobile */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 16px;
+    }
 }
 
+/* ===== Extra Small Mobile (480px and below) ===== */
 @media (max-width: 480px) {
     .dues-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -2318,6 +2528,54 @@ tbody tr:hover {
 
     .apartments-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Even smaller timeline markers */
+    .pin-body {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
+    }
+
+    .timeline-marker {
+        min-width: 44px;
+    }
+
+    /* Chart stat smaller */
+    .chart-stat {
+        flex: 1 1 100%;
+    }
+
+    .chart-stat-value {
+        font-size: 18px;
+    }
+
+    /* Section header tighter */
+    .section-header {
+        margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+        font-size: 18px;
+    }
+
+    /* Nav brand */
+    .nav-brand {
+        padding: 8px 12px;
+    }
+
+    .nav-title {
+        font-size: 14px;
+    }
+
+    /* Main content tighter padding */
+    .main-content {
+        padding: 70px 12px 20px 12px;
+    }
+
+    /* Stat card icon smaller */
+    .stat-card-icon {
+        font-size: 24px;
     }
 }
 
