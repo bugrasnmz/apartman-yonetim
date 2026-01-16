@@ -992,15 +992,18 @@ function renderDecisions() {
     }
     const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date) - new Date(a.date));
     container.innerHTML = sorted.map(d => `
-        <div class="decision-card glass-card">
-            <div class="decision-header">
-                <h3 class="decision-title">${escapeHtml(d.title)}</h3>
-                <span class="decision-date">📅 ${formatDate(d.date)}</span>
+        <div class="transaction-card income">
+            <div class="transaction-icon">📋</div>
+            <div class="transaction-info">
+                <div class="transaction-category">${escapeHtml(d.title)}</div>
+                <div class="transaction-description">${escapeHtml(d.content).substring(0, 100)}${d.content.length > 100 ? '...' : ''}</div>
             </div>
-            <p class="decision-content">${escapeHtml(d.content)}</p>
-            <div class="decision-actions">
-                <button class="btn btn-secondary btn-sm" onclick="editDecision('${d.id}')">✏️ Düzenle</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteDecision('${d.id}')">🗑 Sil</button>
+            <div class="transaction-meta">
+                <div class="transaction-date">📅 ${formatDate(d.date)}</div>
+            </div>
+            <div class="transaction-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editDecision('${d.id}')" title="Düzenle">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteDecision('${d.id}')" title="Sil">🗑️</button>
             </div>
         </div>
     `).join('');
@@ -1089,8 +1092,17 @@ function renderApartments() {
     const aptMap = {};
     apartments.forEach(a => aptMap[a.number] = a);
 
+    // Count occupied apartments (those with resident names)
+    let occupiedCount = 0;
+
     for (let i = 1; i <= TOTAL_APARTMENTS; i++) {
         const apt = aptMap[i] || { number: i, residentName: '-', status: 'empty' };
+
+        // Check if apartment has a resident name (not empty, not '-', not null/undefined)
+        const hasResident = apt.residentName && apt.residentName.trim() !== '' && apt.residentName.trim() !== '-';
+        if (hasResident) {
+            occupiedCount++;
+        }
 
         const statusClass = { 'owner': 'success', 'tenant': 'warning', 'empty': 'secondary' };
         const statusLabel = { 'owner': 'Ev Sahibi', 'tenant': 'Kiracı', 'empty': 'Boş' };
@@ -1114,6 +1126,12 @@ function renderApartments() {
     }
 
     container.innerHTML = html;
+
+    // Update occupied apartments counter
+    const occupiedEl = document.getElementById('occupied-apartments');
+    if (occupiedEl) {
+        occupiedEl.textContent = occupiedCount;
+    }
 }
 
 function editApartment(id) {

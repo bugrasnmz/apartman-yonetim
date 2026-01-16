@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3.1">
+    <link rel="stylesheet" href="css/style.css?v=3.2">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -147,33 +147,34 @@
                         <p>Apartman yönetimi özet bilgileri</p>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-card glass-card gradient-1">
-                            <div class="stat-icon">🏠</div>
-                            <div class="stat-info">
-                                <h3 id="total-apartments">12</h3>
-                                <p>Toplam Daire</p>
+                    <!-- Modern Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">🏠</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Daire</span>
+                                <span class="stat-card-value" id="total-apartments">12</span>
                             </div>
                         </div>
-                        <div class="stat-card glass-card gradient-2">
-                            <div class="stat-icon">✅</div>
-                            <div class="stat-info">
-                                <h3 id="paid-dues">0</h3>
-                                <p>Ödenen Aidat</p>
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">✅</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Ödenen Aidat</span>
+                                <span class="stat-card-value" id="paid-dues">0</span>
                             </div>
                         </div>
-                        <div class="stat-card glass-card gradient-3">
-                            <div class="stat-icon">⏳</div>
-                            <div class="stat-info">
-                                <h3 id="unpaid-dues">0</h3>
-                                <p>Bekleyen Aidat</p>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">⏳</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Bekleyen Aidat</span>
+                                <span class="stat-card-value" id="unpaid-dues">0</span>
                             </div>
                         </div>
-                        <div class="stat-card glass-card gradient-4">
-                            <div class="stat-icon">💰</div>
-                            <div class="stat-info">
-                                <h3 id="total-balance">₺0</h3>
-                                <p>Toplam Bakiye</p>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">💰</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Bakiye</span>
+                                <span class="stat-card-value" id="total-balance">₺0</span>
                             </div>
                         </div>
                     </div>
