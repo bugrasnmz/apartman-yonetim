@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.9">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -259,15 +259,41 @@
                 <!-- Electricity Bills Section -->
                 <section id="electricity-section" class="section">
                     <div class="section-header">
-                        <h2>Elektrik Faturaları</h2>
+                        <h2>Faturalar</h2>
                         <button class="btn btn-primary" id="add-bill-btn">
                             <span>+ Fatura Ekle</span>
                         </button>
                     </div>
 
-                    <div class="filter-bar glass-card">
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">⚡</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Elektrik</span>
+                                <span class="stat-card-value" id="total-electricity">₺0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">💧</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Su</span>
+                                <span class="stat-card-value" id="total-water">₺0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">🔥</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Doğalgaz</span>
+                                <span class="stat-card-value" id="total-gas">₺0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
                         <div class="filter-group">
-                            <label>Yıl:</label>
+                            <label>📅 Yıl:</label>
                             <select id="bill-year-filter">
                                 <option value="2026">2026</option>
                                 <option value="2025">2025</option>
@@ -276,8 +302,11 @@
                         </div>
                     </div>
 
-                    <div id="bills-list" class="bills-grid">
-                        <p class="empty-state">Henüz fatura eklenmemiş</p>
+                    <!-- Bills List -->
+                    <div class="transactions-container">
+                        <div id="bills-list" class="transactions-list">
+                            <p class="empty-state">Henüz fatura eklenmemiş</p>
+                        </div>
                     </div>
                 </section>
 
@@ -294,23 +323,36 @@
                         </div>
                     </div>
 
-                    <div class="dues-summary glass-card">
-                        <div class="summary-item">
-                            <span class="summary-label">Toplam Tahsilat:</span>
-                            <span class="summary-value" id="total-collected">₺0</span>
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">✅</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Tahsilat</span>
+                                <span class="stat-card-value" id="total-collected">₺0</span>
+                            </div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Bekleyen:</span>
-                            <span class="summary-value warning" id="total-pending">₺0</span>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">⏳</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Bekleyen</span>
+                                <span class="stat-card-value" id="total-pending">₺0</span>
+                            </div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Aylık Aidat:</span>
-                            <input type="number" id="monthly-due-amount" class="due-input" value="500" min="0">
-                            <span>₺</span>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">💵</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Aylık Aidat</span>
+                                <div class="stat-input-group">
+                                    <input type="number" id="monthly-due-amount" class="due-input" value="500" min="0">
+                                    <span>₺</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="dues-table-container glass-card">
+                    <!-- Dues Table -->
+                    <div class="transactions-container">
                         <div class="table-scroll">
                             <table class="dues-table" id="dues-table">
                                 <thead>
@@ -347,8 +389,29 @@
                         </button>
                     </div>
 
-                    <div id="maintenance-list" class="maintenance-list">
-                        <p class="empty-state">Henüz bakım kaydı eklenmemiş</p>
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">✅</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Tamamlanan</span>
+                                <span class="stat-card-value" id="maintenance-completed">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">🔧</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Bekleyen</span>
+                                <span class="stat-card-value" id="maintenance-pending">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Maintenance List -->
+                    <div class="transactions-container">
+                        <div id="maintenance-list" class="transactions-list">
+                            <p class="empty-state">Henüz bakım kaydı eklenmemiş</p>
+                        </div>
                     </div>
                 </section>
 
@@ -361,15 +424,19 @@
                         </button>
                     </div>
 
-                    <div class="task-filters glass-card">
-                        <button class="filter-btn active" data-filter="all">Tümü</button>
-                        <button class="filter-btn" data-filter="pending">Bekliyor</button>
-                        <button class="filter-btn" data-filter="in_progress">Devam Ediyor</button>
-                        <button class="filter-btn" data-filter="completed">Tamamlandı</button>
+                    <!-- Filter Buttons -->
+                    <div class="finance-filter-bar">
+                        <button class="filter-btn active" data-filter="all">📋 Tümü</button>
+                        <button class="filter-btn" data-filter="pending">⏳ Bekliyor</button>
+                        <button class="filter-btn" data-filter="in_progress">🔄 Devam Ediyor</button>
+                        <button class="filter-btn" data-filter="completed">✅ Tamamlandı</button>
                     </div>
 
-                    <div id="tasks-list" class="tasks-list">
-                        <p class="empty-state">Henüz iş kaydı eklenmemiş</p>
+                    <!-- Tasks List -->
+                    <div class="transactions-container">
+                        <div id="tasks-list" class="transactions-list">
+                            <p class="empty-state">Henüz iş kaydı eklenmemiş</p>
+                        </div>
                     </div>
                 </section>
 
@@ -382,8 +449,11 @@
                         </button>
                     </div>
 
-                    <div id="decisions-list" class="decisions-list">
-                        <p class="empty-state">Henüz karar eklenmemiş</p>
+                    <!-- Decisions List -->
+                    <div class="transactions-container">
+                        <div id="decisions-list" class="transactions-list">
+                            <p class="empty-state">Henüz karar eklenmemiş</p>
+                        </div>
                     </div>
                 </section>
 
@@ -392,18 +462,37 @@
                     <div class="section-header">
                         <h2>Daire Yönetimi</h2>
                         <div class="header-actions">
-                            <!-- Migration Button (Temporary) -->
-                            <button class="btn btn-secondary" id="migrate-data-btn" style="margin-right: 10px;">
+                            <button class="btn btn-secondary" id="migrate-data-btn">
                                 <span>🔄 Verileri Senkronize Et</span>
                             </button>
                         </div>
                     </div>
 
-                    <div id="apartments-list" class="apartments-grid">
-                        <!-- Populated by JS -->
-                        <div class="loading-state">
-                            <div class="spinner"></div>
-                            <p>Daire bilgileri yükleniyor...</p>
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">🏠</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Daire</span>
+                                <span class="stat-card-value" id="total-apartments">12</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">👥</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Dolu Daire</span>
+                                <span class="stat-card-value" id="occupied-apartments">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Apartments Grid -->
+                    <div class="transactions-container">
+                        <div id="apartments-list" class="apartments-grid">
+                            <div class="loading-state">
+                                <div class="spinner"></div>
+                                <p>Daire bilgileri yükleniyor...</p>
+                            </div>
                         </div>
                     </div>
                 </section>
