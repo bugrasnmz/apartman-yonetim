@@ -1257,6 +1257,19 @@ function updateResidentDashboard() {
         }
     }
     document.getElementById('resident-welcome-text').textContent = welcomeText;
+
+    // --- Update Mobile Profile Header ---
+    const mobileProfileName = document.getElementById('mobile-profile-name');
+    const mobileProfileApt = document.getElementById('mobile-profile-apartment');
+    if (mobileProfileName) {
+        if (AppState.apartments) {
+            const aptData = AppState.apartments.find(a => a.number === apt);
+            mobileProfileName.textContent = aptData?.residentName || 'Sakin';
+        }
+    }
+    if (mobileProfileApt) {
+        mobileProfileApt.textContent = `Daire ${apt}`;
+    }
     // -----------------------------------------------------
 
     const year = AppState.currentYear;
@@ -1779,6 +1792,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mobile Menu
     document.getElementById('mobile-menu-toggle').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('active'));
     document.getElementById('resident-mobile-menu-toggle').addEventListener('click', () => document.getElementById('resident-nav-links').classList.toggle('active'));
+
+    // Mobile Tab Bar (Resident Dashboard)
+    document.querySelectorAll('#resident-tab-bar .tab-item[data-section]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active tab
+            document.querySelectorAll('#resident-tab-bar .tab-item').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            // Show section
+            showSection(tab.dataset.section);
+        });
+    });
+
+    // Tab bar menu toggle
+    const tabMenuToggle = document.getElementById('tab-menu-toggle');
+    if (tabMenuToggle) {
+        tabMenuToggle.addEventListener('click', () => {
+            document.getElementById('resident-nav-links').classList.add('active');
+        });
+    }
+
+    // Menu close button
+    const menuCloseBtn = document.getElementById('menu-close-btn');
+    if (menuCloseBtn) {
+        menuCloseBtn.addEventListener('click', () => {
+            document.getElementById('resident-nav-links').classList.remove('active');
+        });
+    }
+
+    // Close menu when clicking backdrop
+    document.addEventListener('click', (e) => {
+        const navLinks = document.getElementById('resident-nav-links');
+        const menuBtn = document.getElementById('resident-mobile-menu-toggle');
+        const tabMenuBtn = document.getElementById('tab-menu-toggle');
+        if (navLinks && navLinks.classList.contains('active')) {
+            if (!navLinks.contains(e.target) && e.target !== menuBtn && e.target !== tabMenuBtn && !menuBtn?.contains(e.target) && !tabMenuBtn?.contains(e.target)) {
+                navLinks.classList.remove('active');
+            }
+        }
+    });
 
     // Task Filters
     document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {

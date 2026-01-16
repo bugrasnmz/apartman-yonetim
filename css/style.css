@@ -2284,48 +2284,278 @@ tbody tr:hover {
     }
 }
 
+/* ===== Mobile Bottom Tab Bar ===== */
+.mobile-tab-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.98) 0%, rgba(45, 40, 100, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-tab-bar .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    position: relative;
+}
+
+.mobile-tab-bar .tab-icon {
+    font-size: 22px;
+    transition: transform 0.3s ease;
+}
+
+.mobile-tab-bar .tab-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.3s ease;
+}
+
+.mobile-tab-bar .tab-item.active {
+    background: linear-gradient(135deg, rgba(108, 93, 211, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%);
+}
+
+.mobile-tab-bar .tab-item.active .tab-icon {
+    transform: scale(1.15);
+}
+
+.mobile-tab-bar .tab-item.active .tab-label {
+    color: #fff;
+}
+
+.mobile-tab-bar .tab-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: linear-gradient(90deg, #8b5cf6, #6366f1);
+    border-radius: 0 0 4px 4px;
+}
+
+/* ===== Mobile Profile Header (Slide Menu) ===== */
+.mobile-profile-header {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 16px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.profile-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.profile-apartment {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.menu-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.menu-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.nav-divider {
+    display: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    margin: 0 16px 16px;
+}
+
+/* ===== Mobile Menu Overlay Backdrop ===== */
+.menu-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.menu-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
 /* ===== Mobile Styles (768px and below) ===== */
 @media (max-width: 768px) {
     :root {
         --sidebar-width: 100%;
     }
 
-    /* Navbar becomes overlay on mobile */
+    /* Navbar becomes top header bar on mobile */
     .navbar,
     .glass-nav {
-        width: 75%;
-        max-width: 280px;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        height: auto;
+        min-height: 60px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .navbar.active,
-    .glass-nav .nav-links.active {
-        transform: translateX(0);
+    /* Nav brand stays visible */
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* Nav links overlay for resident dashboard */
+    /* Show mobile tab bar */
+    .mobile-tab-bar {
+        display: flex;
+    }
+
+    /* Show profile header and divider in mobile menu */
+    .mobile-profile-header {
+        display: flex;
+    }
+
+    .nav-divider {
+        display: block;
+    }
+
+    /* Adjust main content for tab bar */
+    .main-content {
+        padding-bottom: 85px !important;
+    }
+
+    /* Nav links become slide-out overlay menu with glassmorphism */
     #resident-dashboard .nav-links,
     #admin-dashboard .nav-links {
         position: fixed;
         top: 0;
         left: 0;
-        width: 75%;
-        max-width: 280px;
+        width: 80%;
+        max-width: 300px;
         height: 100vh;
-        background: var(--bg-sidebar);
+        background: linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(45, 40, 100, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         flex-direction: column;
-        padding: 24px 16px;
+        padding: 24px 16px 24px 16px;
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1000;
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
+        overflow-y: auto;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     #resident-dashboard .nav-links.active,
     #admin-dashboard .nav-links.active {
         transform: translateX(0);
+    }
+
+    /* Modern nav link styling in mobile menu */
+    #resident-dashboard .nav-links .nav-link,
+    #admin-dashboard .nav-links .nav-link {
+        padding: 14px 16px;
+        margin-bottom: 4px;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+
+    #resident-dashboard .nav-links .nav-link:hover,
+    #admin-dashboard .nav-links .nav-link:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    #resident-dashboard .nav-links .nav-link.active,
+    #admin-dashboard .nav-links .nav-link.active {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    }
+
+    #resident-dashboard .nav-links .nav-icon,
+    #admin-dashboard .nav-links .nav-icon {
+        font-size: 22px;
+    }
+
+    /* Overlay backdrop when menu is open */
+    .nav-links.active::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 300px;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
     }
 
     /* Mobile menu button visible */

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=4.3">
+    <link rel="stylesheet" href="css/style.css?v=4.5">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -514,6 +514,16 @@
                     <span></span>
                 </button>
                 <div class="nav-links" id="resident-nav-links">
+                    <!-- Mobile Profile Header -->
+                    <div class="mobile-profile-header">
+                        <div class="profile-avatar">👤</div>
+                        <div class="profile-info">
+                            <span class="profile-name" id="mobile-profile-name">Sakin</span>
+                            <span class="profile-apartment" id="mobile-profile-apartment">Daire 1</span>
+                        </div>
+                        <button class="menu-close-btn" id="menu-close-btn">✕</button>
+                    </div>
+                    <div class="nav-divider"></div>
                     <a href="#" class="nav-link active" data-section="resident-overview">
                         <span class="nav-icon">📊</span>
                         <span>Dashboard</span>
@@ -678,6 +688,26 @@
                     </div>
                 </section>
             </main>
+
+            <!-- Mobile Bottom Tab Bar -->
+            <nav class="mobile-tab-bar" id="resident-tab-bar">
+                <button class="tab-item active" data-section="resident-overview">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Ana</span>
+                </button>
+                <button class="tab-item" data-section="resident-bills">
+                    <span class="tab-icon">⚡</span>
+                    <span class="tab-label">Faturalar</span>
+                </button>
+                <button class="tab-item" data-section="resident-decisions">
+                    <span class="tab-icon">📋</span>
+                    <span class="tab-label">Kararlar</span>
+                </button>
+                <button class="tab-item" id="tab-menu-toggle">
+                    <span class="tab-icon">☰</span>
+                    <span class="tab-label">Menü</span>
+                </button>
+            </nav>
         </div>
 
         <!-- Modals -->
