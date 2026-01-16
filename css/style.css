@@ -979,6 +979,103 @@ tbody tr:hover {
     font-size: 18px;
 }
 
+/* ===== Dues Table ===== */
+.dues-table-container {
+    overflow-x: auto;
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    padding: 16px;
+}
+
+.dues-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.dues-table th,
+.dues-table td {
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dues-table th {
+    background: var(--bg-main);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.dues-table th:first-child,
+.dues-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.dues-table tbody tr:hover {
+    background: rgba(108, 93, 211, 0.05);
+}
+
+/* Due Toggle Buttons */
+.due-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    background: var(--bg-main);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.due-toggle:hover {
+    transform: scale(1.1);
+}
+
+.due-toggle.paid {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.due-toggle.unpaid {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.due-toggle.unpaid:hover {
+    background: var(--success-bg);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.due-input {
+    width: 100px;
+    padding: 8px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.due-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
 /* ===== Toast Notifications ===== */
 .toast-container {
     position: fixed;
