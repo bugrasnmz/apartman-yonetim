@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=4.0">
+    <link rel="stylesheet" href="css/style.css?v=4.1">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -874,6 +874,34 @@
                         <button type="submit" class="btn btn-primary">Kaydet</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Decision Detail Modal (View Only) -->
+        <div class="modal" id="decision-detail-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>📝 Karar Detayı</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div class="decision-detail-content">
+                        <h4 id="decision-detail-title"
+                            style="font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary);">
+                        </h4>
+                        <div
+                            style="display: flex; gap: 16px; margin-bottom: 20px; color: var(--text-secondary); font-size: 14px;">
+                            <span id="decision-detail-date">📅 </span>
+                        </div>
+                        <div id="decision-detail-content"
+                            style="background: var(--bg-main); padding: 20px; border-radius: 12px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions" style="padding: 16px 24px; border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary modal-close" style="width: 100%;">Kapat</button>
+                </div>
             </div>
         </div>
 

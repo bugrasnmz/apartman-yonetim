@@ -2176,6 +2176,11 @@ tbody tr:hover {
     background: var(--bg-main);
 }
 
+.compact-item.clickable:hover {
+    background: var(--primary-light);
+    transform: translateX(4px);
+}
+
 .compact-item:last-child {
     border-bottom: none;
 }

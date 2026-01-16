@@ -1361,11 +1361,23 @@ function renderResidentRecentDecisions() {
         return;
     }
     container.innerHTML = recent.map(d => `
-        <div class="compact-item">
+        <div class="compact-item clickable" onclick="viewDecisionDetail('${d.id}')" style="cursor: pointer;">
             <h4>📝 ${escapeHtml(d.title)}</h4>
             <p>${formatDate(d.date)}</p>
         </div>
     `).join('');
+}
+
+// View Decision Detail in Modal
+function viewDecisionDetail(id) {
+    const decision = AppState.decisions.find(d => d.id === id);
+    if (!decision) return;
+
+    document.getElementById('decision-detail-title').textContent = decision.title;
+    document.getElementById('decision-detail-date').textContent = '📅 ' + formatDate(decision.date);
+    document.getElementById('decision-detail-content').textContent = decision.content || 'İçerik bulunmuyor.';
+
+    openModal('decision-detail-modal');
 }
 
 // ===== Charts =====
