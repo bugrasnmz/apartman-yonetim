@@ -1269,18 +1269,121 @@ function updateResidentDashboard() {
 
     document.getElementById('resident-year').textContent = year;
 
-    const grid = document.getElementById('resident-dues-grid');
-    let html = '';
-    for (let month = 1; month <= 12; month++) {
-        const isPaid = AppState.dues[year]?.[apt]?.[month] || false;
-        html += `<div class="month-status ${isPaid ? 'paid' : 'unpaid'}"><div class="month-name">${MONTHS_SHORT[month - 1]}</div><div class="month-icon">${isPaid ? '✓' : '✗'}</div></div>`;
-    }
-    grid.innerHTML = html;
+    // Render bar chart for dues
+    renderResidentDuesChart(year, apt);
 
     renderResidentMaintenance();
     renderResidentTasks();
     renderResidentRecentDecisions();
     initResidentCharts();
+}
+
+// Resident Dues Bar Chart
+let residentDuesChartInstance = null;
+
+function renderResidentDuesChart(year, apt) {
+    const canvas = document.getElementById('resident-dues-chart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const monthlyDue = AppState.settings.monthlyDueAmount || 0;
+
+    // Build data for each month
+    const paidData = [];
+    const unpaidData = [];
+    let paidMonths = 0;
+    let unpaidMonths = 0;
+
+    for (let month = 1; month <= 12; month++) {
+        const isPaid = AppState.dues[year]?.[apt]?.[month] || false;
+        if (isPaid) {
+            paidData.push(monthlyDue);
+            unpaidData.push(0);
+            paidMonths++;
+        } else {
+            paidData.push(0);
+            unpaidData.push(monthlyDue);
+            unpaidMonths++;
+        }
+    }
+
+    // Update summary stats
+    document.getElementById('resident-paid-months').textContent = paidMonths;
+    document.getElementById('resident-unpaid-months').textContent = unpaidMonths;
+    document.getElementById('resident-total-paid').textContent = `₺${formatNumber(paidMonths * monthlyDue)}`;
+
+    // Destroy previous chart if exists
+    if (residentDuesChartInstance) {
+        residentDuesChartInstance.destroy();
+    }
+
+    // Create new chart
+    residentDuesChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: MONTHS_SHORT,
+            datasets: [
+                {
+                    label: 'Ödendi',
+                    data: paidData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Ödenmedi',
+                    data: unpaidData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ': ₺' + formatNumber(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return '₺' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 function renderResidentMaintenance() {

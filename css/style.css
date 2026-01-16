@@ -812,6 +812,112 @@ body {
     padding: 8px 12px;
 }
 
+/* ===== Chart Styles ===== */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.chart-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-dot.paid {
+    background: var(--success);
+}
+
+.legend-dot.unpaid {
+    background: var(--danger);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 250px;
+    margin-bottom: 24px;
+}
+
+.chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.chart-summary {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.chart-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--bg-main);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid transparent;
+}
+
+.chart-stat.income {
+    border-left-color: var(--success);
+}
+
+.chart-stat.expense {
+    border-left-color: var(--danger);
+}
+
+.chart-stat.balance {
+    border-left-color: var(--primary);
+}
+
+.chart-stat-icon {
+    font-size: 24px;
+}
+
+.chart-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.chart-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 /* ===== Dashboard Grid ===== */
 .dashboard-grid {
     display: grid;
