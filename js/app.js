@@ -1317,6 +1317,17 @@ function renderResidentDuesChart(year, apt) {
         residentDuesChartInstance.destroy();
     }
 
+    // Create glossy gradients
+    const gradientGreen = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientGreen.addColorStop(0, 'rgba(16, 255, 180, 0.95)');
+    gradientGreen.addColorStop(0.4, 'rgba(16, 185, 129, 0.9)');
+    gradientGreen.addColorStop(1, 'rgba(5, 150, 105, 0.8)');
+
+    const gradientRed = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientRed.addColorStop(0, 'rgba(251, 146, 60, 0.95)');
+    gradientRed.addColorStop(0.4, 'rgba(239, 68, 68, 0.9)');
+    gradientRed.addColorStop(1, 'rgba(185, 28, 28, 0.8)');
+
     // Create new chart
     residentDuesChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -1326,18 +1337,22 @@ function renderResidentDuesChart(year, apt) {
                 {
                     label: 'Ödendi',
                     data: paidData,
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                    borderColor: 'rgb(16, 185, 129)',
-                    borderWidth: 1,
-                    borderRadius: 6
+                    backgroundColor: gradientGreen,
+                    borderColor: 'rgba(16, 255, 180, 1)',
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(16, 255, 180, 1)'
                 },
                 {
                     label: 'Ödenmedi',
                     data: unpaidData,
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: 'rgb(239, 68, 68)',
-                    borderWidth: 1,
-                    borderRadius: 6
+                    backgroundColor: gradientRed,
+                    borderColor: 'rgba(251, 146, 60, 1)',
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(251, 146, 60, 1)'
                 }
             ]
         },
@@ -1349,9 +1364,14 @@ function renderResidentDuesChart(year, apt) {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    cornerRadius: 8,
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(148, 163, 184, 0.3)',
+                    borderWidth: 1,
+                    padding: 14,
+                    cornerRadius: 10,
+                    displayColors: true,
                     callbacks: {
                         label: function (context) {
                             return context.dataset.label + ': ₺' + formatNumber(context.raw);
@@ -1365,19 +1385,25 @@ function renderResidentDuesChart(year, apt) {
                         display: false
                     },
                     ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
                         font: {
-                            size: 11
+                            size: 11,
+                            weight: '500'
                         }
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: 'rgba(148, 163, 184, 0.1)'
                     },
                     ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
+                        font: {
+                            size: 11
+                        },
                         callback: function (value) {
-                            return '₺' + value;
+                            return '₺' + formatNumber(value);
                         }
                     }
                 }
