@@ -748,18 +748,38 @@ function renderBills() {
         return;
     }
 
+    // Bill type icons
+    const billIcons = {
+        elektrik: '⚡',
+        su: '💧',
+        dogalgaz: '🔥',
+        default: '📄'
+    };
+
+    const billLabels = {
+        elektrik: 'Elektrik Faturası',
+        su: 'Su Faturası',
+        dogalgaz: 'Doğalgaz Faturası',
+        default: 'Fatura'
+    };
+
     container.innerHTML = filtered.map(bill => `
-        <div class="bill-card glass-card">
-            <div class="bill-header">
-                <span class="bill-month">${MONTHS[bill.month - 1]}</span>
-                <span class="bill-year">${bill.year}</span>
+        <div class="transaction-card expense">
+            <div class="transaction-icon">
+                ${billIcons[bill.type] || billIcons.default}
             </div>
-            <div class="bill-amount">₺${formatNumber(bill.amount)}</div>
-            ${bill.notes ? `<p style="color: var(--text-secondary); font-size: var(--font-size-sm);">${escapeHtml(bill.notes)}</p>` : ''}
-            <div class="bill-actions">
-                ${bill.fileData ? `<button class="btn btn-secondary btn-sm" onclick="viewBill('${bill.id}')">👁</button>` : ''}
-                <button class="btn btn-secondary btn-sm" onclick="editBill('${bill.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteBill('${bill.id}')">🗑</button>
+            <div class="transaction-info">
+                <div class="transaction-category">${billLabels[bill.type] || billLabels.default}</div>
+                <div class="transaction-description">${bill.notes ? escapeHtml(bill.notes) : `${MONTHS[bill.month - 1]} ${bill.year}`}</div>
+            </div>
+            <div class="transaction-meta">
+                <div class="transaction-amount expense">₺${formatNumber(bill.amount)}</div>
+                <div class="transaction-date">📅 ${MONTHS[bill.month - 1]} ${bill.year}</div>
+            </div>
+            <div class="transaction-actions">
+                ${bill.fileData ? `<button class="btn btn-secondary btn-sm" onclick="viewBill('${bill.id}')" title="Görüntüle">👁️</button>` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="editBill('${bill.id}')" title="Düzenle">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteBill('${bill.id}')" title="Sil">🗑️</button>
             </div>
         </div>
     `).join('');
@@ -817,6 +837,7 @@ function editBill(id) {
     if (!bill) return;
     document.getElementById('bill-modal-title').textContent = 'Fatura Düzenle';
     document.getElementById('bill-id').value = bill.id;
+    document.getElementById('bill-type').value = bill.type || 'elektrik';
     document.getElementById('bill-month').value = bill.month;
     document.getElementById('bill-year').value = bill.year;
     document.getElementById('bill-amount').value = bill.amount;
@@ -1619,7 +1640,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bill-form').addEventListener('submit', async e => {
         e.preventDefault();
         const id = document.getElementById('bill-id').value;
-        const data = { month: parseInt(document.getElementById('bill-month').value), year: parseInt(document.getElementById('bill-year').value), amount: parseFloat(document.getElementById('bill-amount').value), notes: document.getElementById('bill-notes').value };
+        const data = {
+            type: document.getElementById('bill-type').value,
+            month: parseInt(document.getElementById('bill-month').value),
+            year: parseInt(document.getElementById('bill-year').value),
+            amount: parseFloat(document.getElementById('bill-amount').value),
+            notes: document.getElementById('bill-notes').value
+        };
         const fileInput = document.getElementById('bill-file');
         if (fileInput.files.length > 0) { const file = fileInput.files[0]; data.fileData = await fileToBase64(file); data.fileType = file.type.includes('pdf') ? 'pdf' : 'image'; }
         if (id) updateBill(id, data); else addBill(data);

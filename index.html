@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="stylesheet" href="css/style.css?v=3.1">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -657,6 +657,14 @@
                 </div>
                 <form id="bill-form" class="modal-form">
                     <input type="hidden" id="bill-id">
+                    <div class="form-group">
+                        <label for="bill-type">Fatura Türü</label>
+                        <select id="bill-type" required>
+                            <option value="elektrik">⚡ Elektrik</option>
+                            <option value="su">💧 Su</option>
+                            <option value="dogalgaz">🔥 Doğalgaz</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="bill-month">Ay</label>
                         <select id="bill-month" required>
