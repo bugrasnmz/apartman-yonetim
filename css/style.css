@@ -573,6 +573,39 @@ body {
     gap: 8px;
 }
 
+/* ===== Custom Chart Row Styles ===== */
+.charts-row-custom {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 900px) {
+    .charts-row-custom {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+.chart-card-custom {
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    padding: 32px;
+    box-shadow: var(--shadow-md);
+}
+
+.chart-card-custom .chart-header {
+    margin-bottom: 24px;
+}
+
+.chart-card-custom .chart-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
 /* ===== Finance Section Styles ===== */
 .finance-stats-grid {
     display: grid;
