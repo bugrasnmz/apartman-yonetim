@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.8">
+    <link rel="stylesheet" href="css/style.css?v=2.9">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -203,24 +203,35 @@
                         </button>
                     </div>
 
-                    <div class="finance-summary glass-card">
-                        <div class="summary-item">
-                            <span class="summary-label">Toplam Gelir:</span>
-                            <span class="summary-value success" id="admin-total-income">₺0</span>
+                    <!-- Modern Summary Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">💰</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Gelir</span>
+                                <span class="stat-card-value" id="admin-total-income">₺0</span>
+                            </div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Toplam Gider:</span>
-                            <span class="summary-value warning" id="admin-total-expense">₺0</span>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">💸</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Gider</span>
+                                <span class="stat-card-value" id="admin-total-expense">₺0</span>
+                            </div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Net Bakiye:</span>
-                            <span class="summary-value" id="admin-net-balance">₺0</span>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">📊</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Net Bakiye</span>
+                                <span class="stat-card-value" id="admin-net-balance">₺0</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="filter-bar glass-card">
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
                         <div class="filter-group">
-                            <label>Tür:</label>
+                            <label>📋 Tür:</label>
                             <select id="transaction-type-filter">
                                 <option value="all">Tümü</option>
                                 <option value="income">Gelir</option>
@@ -228,7 +239,7 @@
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label>Yıl:</label>
+                            <label>📅 Yıl:</label>
                             <select id="transaction-year-filter">
                                 <option value="2026">2026</option>
                                 <option value="2025">2025</option>
@@ -237,8 +248,11 @@
                         </div>
                     </div>
 
-                    <div id="transactions-list" class="transactions-list">
-                        <p class="empty-state">Henüz kayıt eklenmemiş</p>
+                    <!-- Transactions List -->
+                    <div class="transactions-container">
+                        <div id="transactions-list" class="transactions-list">
+                            <p class="empty-state">Henüz kayıt eklenmemiş</p>
+                        </div>
                     </div>
                 </section>
 

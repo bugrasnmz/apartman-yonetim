@@ -485,19 +485,37 @@ function renderTransactions() {
         return;
     }
 
+    // Category icons mapping
+    const categoryIcons = {
+        aidat: '🏠',
+        kira: '🔑',
+        diger_gelir: '💵',
+        elektrik: '⚡',
+        su: '💧',
+        dogalgaz: '🔥',
+        temizlik: '🧹',
+        bakim: '🔧',
+        guvenlik: '🛡️',
+        sigorta: '📋',
+        diger_gider: '📦'
+    };
+
     container.innerHTML = filtered.map(t => `
         <div class="transaction-card ${t.type}">
+            <div class="transaction-icon">
+                ${categoryIcons[t.category] || (t.type === 'income' ? '💰' : '💸')}
+            </div>
             <div class="transaction-info">
-                <h4>${t.type === 'income' ? '💵' : '💸'} ${CATEGORY_LABELS[t.category] || t.category}</h4>
-                <p>${escapeHtml(t.description || '-')}</p>
+                <div class="transaction-category">${CATEGORY_LABELS[t.category] || t.category}</div>
+                <div class="transaction-description">${escapeHtml(t.description || '-')}</div>
             </div>
             <div class="transaction-meta">
-                <span class="transaction-amount ${t.type}">${t.type === 'income' ? '+' : '-'}₺${formatNumber(t.amount)}</span>
-                <span class="transaction-date">${formatDate(t.date)}</span>
+                <div class="transaction-amount ${t.type}">${t.type === 'income' ? '+' : '-'}₺${formatNumber(t.amount)}</div>
+                <div class="transaction-date">📅 ${formatDate(t.date)}</div>
             </div>
             <div class="transaction-actions">
-                <button class="btn btn-secondary btn-sm" onclick="editTransaction('${t.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">🗑</button>
+                <button class="btn btn-secondary btn-sm" onclick="editTransaction('${t.id}')" title="Düzenle">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')" title="Sil">🗑️</button>
             </div>
         </div>
     `).join('');
