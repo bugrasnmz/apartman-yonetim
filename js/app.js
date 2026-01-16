@@ -1454,6 +1454,12 @@ function initDuesCollectionChart() {
 
     const data = getDuesCollectionData(AppState.currentYear);
 
+    // Create glossy gradient
+    const gradientBlue = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradientBlue.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+    gradientBlue.addColorStop(0.5, 'rgba(59, 130, 246, 0.8)');
+    gradientBlue.addColorStop(1, 'rgba(99, 102, 241, 0.7)');
+
     AppState.charts.duesCollection = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1461,19 +1467,47 @@ function initDuesCollectionChart() {
             datasets: [{
                 label: 'Tahsilat Oranı (%)',
                 data: data.rate,
-                backgroundColor: 'rgba(99, 102, 241, 0.7)',
-                borderColor: 'rgba(99, 102, 241, 1)',
-                borderWidth: 1,
-                borderRadius: 4
+                backgroundColor: gradientBlue,
+                borderColor: 'rgba(56, 189, 248, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+                hoverBackgroundColor: 'rgba(56, 189, 248, 1)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(56, 189, 248, 0.5)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12
+                }
+            },
             scales: {
-                y: { beginAtZero: true, max: 100, ticks: { color: 'rgba(255,255,255,0.7)', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
+                        callback: v => v + '%',
+                        font: { size: 11 }
+                    },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
+                        font: { size: 11 }
+                    },
+                    grid: { display: false }
+                }
             }
         }
     });
@@ -1487,24 +1521,107 @@ function initFinancialStatusChart() {
     const balance = calculateBalance();
 
     document.getElementById('current-balance').textContent = `₺${formatNumber(balance)}`;
-    document.getElementById('current-balance').className = `balance-value ${balance < 0 ? 'negative' : ''}`;
+    document.getElementById('current-balance').className = `chart-stat-value ${balance < 0 ? 'negative' : ''}`;
+
+    // Create glossy gradients
+    const context = ctx.getContext('2d');
+
+    // Green gradient for income
+    const gradientGreen = context.createLinearGradient(0, 0, 0, 300);
+    gradientGreen.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    gradientGreen.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+
+    // Red/Orange gradient for expense
+    const gradientRed = context.createLinearGradient(0, 0, 0, 300);
+    gradientRed.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
+    gradientRed.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
 
     AppState.charts.financialStatus = new Chart(ctx, {
         type: 'line',
         data: {
             labels: MONTHS_SHORT,
             datasets: [
-                { label: 'Gelir', data: data.income, borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', fill: true, tension: 0.4 },
-                { label: 'Gider', data: data.expense, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4 }
+                {
+                    label: 'Gelir',
+                    data: data.income,
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: gradientGreen,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgb(16, 185, 129)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Gider',
+                    data: data.expense,
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: gradientRed,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgb(249, 115, 22)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: 'rgba(255,255,255,0.7)' } } },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(100, 116, 139, 0.9)',
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20,
+                        font: { size: 12, weight: '500' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(148, 163, 184, 0.3)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ': ₺' + formatNumber(context.raw);
+                        }
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.7)', callback: v => '₺' + v }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } }
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
+                        callback: v => '₺' + formatNumber(v),
+                        font: { size: 11 }
+                    },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(100, 116, 139, 0.8)',
+                        font: { size: 11 }
+                    },
+                    grid: { display: false }
+                }
             }
         }
     });
