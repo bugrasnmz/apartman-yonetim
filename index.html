@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3.9">
+    <link rel="stylesheet" href="css/style.css?v=4.0">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -555,23 +555,25 @@
                     </div>
 
                     <!-- Charts Row: Aidat Tahsilat + Financial Status -->
-                    <div class="charts-row-custom">
-                        <div class="chart-card-custom">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px; margin-bottom: 48px;">
+                        <div
+                            style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
                             <div class="chart-header">
                                 <h3>📊 Aidat Tahsilat Durumu</h3>
                             </div>
-                            <div class="chart-wrapper" style="height: 220px;">
+                            <div class="chart-wrapper" style="height: 240px;">
                                 <canvas id="dues-collection-chart"></canvas>
                             </div>
                         </div>
-                        <div class="chart-card-custom">
+                        <div
+                            style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
                             <div class="chart-header">
                                 <h3>📈 Finansal Durum</h3>
                             </div>
-                            <div class="chart-wrapper" style="height: 220px;">
+                            <div class="chart-wrapper" style="height: 240px;">
                                 <canvas id="financial-status-chart"></canvas>
                             </div>
-                            <div class="chart-summary" style="margin-top: 20px;">
+                            <div class="chart-summary" style="margin-top: 24px;">
                                 <div class="chart-stat balance">
                                     <span class="chart-stat-icon">💰</span>
                                     <div class="chart-stat-info">
