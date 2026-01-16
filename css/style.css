@@ -918,6 +918,162 @@ body {
     color: var(--text-secondary);
 }
 
+/* ===== Timeline Marker Styles ===== */
+.dues-timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    padding: 60px 10px 30px;
+    margin: 20px 0;
+}
+
+.dues-timeline::before {
+    content: '';
+    position: absolute;
+    bottom: 15px;
+    left: 20px;
+    right: 20px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--border-color) 0%, var(--border-color) 100%);
+    border-radius: 2px;
+}
+
+.timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.timeline-marker:hover {
+    transform: translateY(-5px);
+}
+
+.timeline-pin {
+    width: 48px;
+    height: 60px;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.timeline-pin .pin-body {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.timeline-pin .pin-tail {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 14px solid;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+/* Paid state - Green */
+.timeline-marker.paid .pin-body {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+}
+
+.timeline-marker.paid .pin-tail {
+    border-top-color: #059669;
+}
+
+.timeline-marker.paid:hover .pin-body {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Unpaid state - Red */
+.timeline-marker.unpaid .pin-body {
+    background: linear-gradient(135deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%);
+}
+
+.timeline-marker.unpaid .pin-tail {
+    border-top-color: #e11d48;
+}
+
+.timeline-marker.unpaid:hover .pin-body {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid;
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+}
+
+.timeline-marker.paid .timeline-dot {
+    border-color: #10b981;
+}
+
+.timeline-marker.unpaid .timeline-dot {
+    border-color: #f43f5e;
+}
+
+.timeline-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dues-timeline {
+        padding: 50px 5px 25px;
+        overflow-x: auto;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .timeline-pin {
+        width: 36px;
+        height: 48px;
+    }
+
+    .timeline-pin .pin-body {
+        width: 36px;
+        height: 36px;
+        font-size: 11px;
+    }
+
+    .timeline-pin .pin-tail {
+        border-left-width: 8px;
+        border-right-width: 8px;
+        border-top-width: 10px;
+    }
+
+    .timeline-label {
+        font-size: 9px;
+    }
+}
+
 /* ===== Dashboard Grid ===== */
 .dashboard-grid {
     display: grid;

@@ -1282,134 +1282,44 @@ function updateResidentDashboard() {
 let residentDuesChartInstance = null;
 
 function renderResidentDuesChart(year, apt) {
-    const canvas = document.getElementById('resident-dues-chart');
-    if (!canvas) return;
+    const timeline = document.getElementById('resident-dues-timeline');
+    if (!timeline) return;
 
-    const ctx = canvas.getContext('2d');
     const monthlyDue = AppState.settings.monthlyDueAmount || 0;
 
     // Build data for each month
-    const paidData = [];
-    const unpaidData = [];
     let paidMonths = 0;
     let unpaidMonths = 0;
+    let html = '';
 
     for (let month = 1; month <= 12; month++) {
         const isPaid = AppState.dues[year]?.[apt]?.[month] || false;
+        const status = isPaid ? 'paid' : 'unpaid';
+
         if (isPaid) {
-            paidData.push(monthlyDue);
-            unpaidData.push(0);
             paidMonths++;
         } else {
-            paidData.push(0);
-            unpaidData.push(monthlyDue);
             unpaidMonths++;
         }
+
+        html += `
+            <div class="timeline-marker ${status}" title="${MONTHS[month - 1]}: ${isPaid ? 'Ödendi ✓' : 'Ödenmedi ✗'}">
+                <div class="timeline-pin">
+                    <div class="pin-body">${String(month).padStart(2, '0')}</div>
+                    <div class="pin-tail"></div>
+                </div>
+                <div class="timeline-dot"></div>
+                <span class="timeline-label">${MONTHS_SHORT[month - 1]}</span>
+            </div>
+        `;
     }
+
+    timeline.innerHTML = html;
 
     // Update summary stats
     document.getElementById('resident-paid-months').textContent = paidMonths;
     document.getElementById('resident-unpaid-months').textContent = unpaidMonths;
     document.getElementById('resident-total-paid').textContent = `₺${formatNumber(paidMonths * monthlyDue)}`;
-
-    // Destroy previous chart if exists
-    if (residentDuesChartInstance) {
-        residentDuesChartInstance.destroy();
-    }
-
-    // Create glossy gradients
-    const gradientGreen = ctx.createLinearGradient(0, 0, 0, 300);
-    gradientGreen.addColorStop(0, 'rgba(16, 255, 180, 0.95)');
-    gradientGreen.addColorStop(0.4, 'rgba(16, 185, 129, 0.9)');
-    gradientGreen.addColorStop(1, 'rgba(5, 150, 105, 0.8)');
-
-    const gradientRed = ctx.createLinearGradient(0, 0, 0, 300);
-    gradientRed.addColorStop(0, 'rgba(251, 146, 60, 0.95)');
-    gradientRed.addColorStop(0.4, 'rgba(239, 68, 68, 0.9)');
-    gradientRed.addColorStop(1, 'rgba(185, 28, 28, 0.8)');
-
-    // Create new chart
-    residentDuesChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: MONTHS_SHORT,
-            datasets: [
-                {
-                    label: 'Ödendi',
-                    data: paidData,
-                    backgroundColor: gradientGreen,
-                    borderColor: 'rgba(16, 255, 180, 1)',
-                    borderWidth: 2,
-                    borderRadius: 10,
-                    borderSkipped: false,
-                    hoverBackgroundColor: 'rgba(16, 255, 180, 1)'
-                },
-                {
-                    label: 'Ödenmedi',
-                    data: unpaidData,
-                    backgroundColor: gradientRed,
-                    borderColor: 'rgba(251, 146, 60, 1)',
-                    borderWidth: 2,
-                    borderRadius: 10,
-                    borderSkipped: false,
-                    hoverBackgroundColor: 'rgba(251, 146, 60, 1)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(148, 163, 184, 0.3)',
-                    borderWidth: 1,
-                    padding: 14,
-                    cornerRadius: 10,
-                    displayColors: true,
-                    callbacks: {
-                        label: function (context) {
-                            return context.dataset.label + ': ₺' + formatNumber(context.raw);
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: 'rgba(100, 116, 139, 0.8)',
-                        font: {
-                            size: 11,
-                            weight: '500'
-                        }
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)'
-                    },
-                    ticks: {
-                        color: 'rgba(100, 116, 139, 0.8)',
-                        font: {
-                            size: 11
-                        },
-                        callback: function (value) {
-                            return '₺' + formatNumber(value);
-                        }
-                    }
-                }
-            }
-        }
-    });
 }
 
 function renderResidentMaintenance() {
