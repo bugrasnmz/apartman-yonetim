@@ -169,17 +169,23 @@ async function initializeData() {
         AppState.transactions = transactions;
         AppState.maintenance = maintenance;
         AppState.tasks = tasks;
-        AppState.apartments = apartments; // New Collection
+        AppState.apartments = apartments;
 
+        // Initialize settings if not exists
         if (settingsDoc.exists()) {
             AppState.settings = settingsDoc.data();
+        } else {
+            // Save default settings to Firebase
+            AppState.settings = { monthlyDueAmount: 500 };
+            await FirebaseService.save(COLLECTIONS.SETTINGS, 'config', AppState.settings);
         }
 
+        // Initialize dues for current year
         AppState.dues = {};
         if (currentDuesDoc.exists()) {
             AppState.dues[AppState.currentYear] = currentDuesDoc.data();
         } else {
-            // Initialize empty dues for current year
+            // Initialize empty dues for current year and save to Firebase
             AppState.dues[AppState.currentYear] = {};
             for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
                 AppState.dues[AppState.currentYear][apt] = {};
@@ -187,7 +193,12 @@ async function initializeData() {
                     AppState.dues[AppState.currentYear][apt][month] = false;
                 }
             }
+            // Save initial dues to Firebase
+            await FirebaseService.save(COLLECTIONS.DUES, AppState.currentYear.toString(), AppState.dues[AppState.currentYear]);
         }
+
+        // Initialize missing apartments (ensure all 12 exist in Firebase)
+        await initializeMissingApartments(apartments);
 
         refreshCurrentView();
         showToast('Veriler güncellendi', 'success');
@@ -195,6 +206,43 @@ async function initializeData() {
     } catch (error) {
         console.error("Init Error:", error);
         showToast('Veri yükleme hatası: ' + error.message, 'error');
+    }
+}
+
+// Initialize missing apartments in Firebase
+async function initializeMissingApartments(existingApartments) {
+    const existingNumbers = new Set(existingApartments.map(a => a.number));
+    const missingApartments = [];
+
+    for (let i = 1; i <= TOTAL_APARTMENTS; i++) {
+        if (!existingNumbers.has(i)) {
+            const aptData = {
+                number: i,
+                residentName: '',
+                phone: '',
+                status: 'empty',
+                ownerName: '',
+                residentCount: 0,
+                moveInDate: '',
+                createdAt: new Date().toISOString()
+            };
+            missingApartments.push(aptData);
+        }
+    }
+
+    // Save missing apartments to Firebase in parallel
+    if (missingApartments.length > 0) {
+        console.log(`Initializing ${missingApartments.length} missing apartments...`);
+        const savePromises = missingApartments.map(async (apt) => {
+            const docId = `apt_${apt.number}`;
+            apt.id = docId;
+            await setDoc(doc(db, COLLECTIONS.APARTMENTS, docId), apt);
+            return apt;
+        });
+
+        const savedApartments = await Promise.all(savePromises);
+        AppState.apartments = [...existingApartments, ...savedApartments].sort((a, b) => a.number - b.number);
+        console.log('All apartments initialized in Firebase');
     }
 }
 
@@ -803,18 +851,32 @@ function renderDuesTable() {
     document.getElementById('total-pending').textContent = `₺${formatNumber(totalPending)}`;
 }
 
-function toggleDue(year, apartment, month) {
+async function toggleDue(year, apartment, month) {
     if (!AppState.dues[year]) AppState.dues[year] = {};
     if (!AppState.dues[year][apartment]) AppState.dues[year][apartment] = {};
     AppState.dues[year][apartment][month] = !AppState.dues[year][apartment][month];
-    Storage.save('dues', AppState.dues);
+
+    // Save directly to Firebase
+    try {
+        await FirebaseService.save(COLLECTIONS.DUES, year.toString(), AppState.dues[year]);
+    } catch (error) {
+        console.error('Error saving dues:', error);
+    }
+
     renderDuesTable();
     showToast(`Daire ${apartment} - ${MONTHS[month - 1]} ${AppState.dues[year][apartment][month] ? 'ödendi' : 'ödenmedi'}`, 'success');
 }
 
-function updateMonthlyDueAmount() {
+async function updateMonthlyDueAmount() {
     AppState.settings.monthlyDueAmount = parseInt(document.getElementById('monthly-due-amount').value) || 0;
-    Storage.save('settings', AppState.settings);
+
+    // Save directly to Firebase
+    try {
+        await FirebaseService.save(COLLECTIONS.SETTINGS, 'config', AppState.settings);
+    } catch (error) {
+        console.error('Error saving settings:', error);
+    }
+
     renderDuesTable();
 }
 
