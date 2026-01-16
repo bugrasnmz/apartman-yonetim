@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3.3">
+    <link rel="stylesheet" href="css/style.css?v=3.4">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -554,44 +554,37 @@
                         </div>
                     </div>
 
-                    <!-- Charts Row 1: Aidat Tahsilat + Financial Status -->
-                    <div class="charts-row">
-                        <div class="chart-card glass-card">
-                            <h3>📊 Aidat Tahsilat Durumu</h3>
-                            <div class="chart-container">
+                    <!-- Charts Row: Aidat Tahsilat + Financial Status -->
+                    <div class="finance-stats-grid" style="margin-bottom: 24px;">
+                        <div class="transactions-container">
+                            <div class="chart-header">
+                                <h3>📊 Aidat Tahsilat Durumu</h3>
+                            </div>
+                            <div class="chart-wrapper" style="height: 200px;">
                                 <canvas id="dues-collection-chart"></canvas>
                             </div>
                         </div>
-                        <div class="chart-card glass-card">
-                            <h3>📈 Finansal Durum</h3>
-                            <div class="chart-container">
+                        <div class="transactions-container">
+                            <div class="chart-header">
+                                <h3>📈 Finansal Durum</h3>
+                            </div>
+                            <div class="chart-wrapper" style="height: 200px;">
                                 <canvas id="financial-status-chart"></canvas>
                             </div>
-                            <div class="chart-legend" id="balance-indicator">
-                                <span class="balance-label">Güncel Bakiye:</span>
-                                <span class="balance-value" id="current-balance">₺0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Row 2: Income/Expense Pie Charts -->
-                    <div class="charts-row">
-                        <div class="chart-card glass-card">
-                            <h3>💵 Gelir Dağılımı</h3>
-                            <div class="chart-container pie-container">
-                                <canvas id="income-pie-chart"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-card">
-                            <h3>💸 Gider Dağılımı</h3>
-                            <div class="chart-container pie-container">
-                                <canvas id="expense-pie-chart"></canvas>
+                            <div class="chart-summary" style="margin-top: 16px;">
+                                <div class="chart-stat balance">
+                                    <span class="chart-stat-icon">💰</span>
+                                    <div class="chart-stat-info">
+                                        <span class="chart-stat-value" id="current-balance">₺0</span>
+                                        <span class="chart-stat-label">Güncel Bakiye</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Yıllık Aidat Özeti -->
-                    <div class="transactions-container">
+                    <div class="transactions-container" style="margin-bottom: 24px;">
                         <div class="chart-header">
                             <h3>📊 Yıllık Aidat Özeti (<span id="resident-year">2026</span>)</h3>
                             <div class="chart-legend">
@@ -628,21 +621,27 @@
                     </div>
 
                     <!-- Bottom Cards: Maintenance + Tasks + Decisions -->
-                    <div class="dashboard-grid-3">
-                        <div class="dashboard-card glass-card">
-                            <h3>🔧 Periyodik Bakımlar</h3>
+                    <div class="dashboard-grid-3" style="margin-top: 24px;">
+                        <div class="transactions-container">
+                            <div class="chart-header">
+                                <h3>🔧 Periyodik Bakımlar</h3>
+                            </div>
                             <div id="resident-maintenance-list" class="compact-list">
                                 <p class="empty-state">Yaklaşan bakım yok</p>
                             </div>
                         </div>
-                        <div class="dashboard-card glass-card">
-                            <h3>📋 İş Takibi</h3>
+                        <div class="transactions-container">
+                            <div class="chart-header">
+                                <h3>📋 İş Takibi</h3>
+                            </div>
                             <div id="resident-tasks-list" class="compact-list">
                                 <p class="empty-state">Aktif iş yok</p>
                             </div>
                         </div>
-                        <div class="dashboard-card glass-card">
-                            <h3>📝 Son Kararlar</h3>
+                        <div class="transactions-container">
+                            <div class="chart-header">
+                                <h3>📝 Son Kararlar</h3>
+                            </div>
                             <div id="resident-recent-decisions" class="compact-list">
                                 <p class="empty-state">Henüz karar eklenmemiş</p>
                             </div>
