@@ -17,7 +17,7 @@
 Uygulamayı açtığınızda:
 
 **Yönetici Girişi:**
-- Şifre: `admin123`
+- Şifre: `Eb27092024`
 
 **Sakin Girişi:**
 - Daire numaranızı seçin

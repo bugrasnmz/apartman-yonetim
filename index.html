@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2.1">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -47,7 +47,7 @@
                             <span>Giriş Yap</span>
                             <span class="btn-icon">→</span>
                         </button>
-                        <p class="login-hint">Demo şifre: admin123</p>
+                        <p class="login-hint">Demo şifre: Eb27092024</p>
                     </form>
 
                     <!-- Resident Login Form -->
@@ -128,6 +128,10 @@
                     <a href="#" class="nav-link" data-section="decisions">
                         <span class="nav-icon">📝</span>
                         <span>Kararlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="apartments">
+                        <span class="nav-icon">🏘️</span>
+                        <span>Daireler</span>
                     </a>
                     <a href="#" class="nav-link logout-link" id="admin-logout">
                         <span class="nav-icon">🚪</span>
@@ -367,6 +371,27 @@
 
                     <div id="decisions-list" class="decisions-list">
                         <p class="empty-state">Henüz karar eklenmemiş</p>
+                    </div>
+                </section>
+
+                <!-- Apartments Section (NEW) -->
+                <section id="apartments-section" class="section">
+                    <div class="section-header">
+                        <h2>Daire Yönetimi</h2>
+                        <div class="header-actions">
+                            <!-- Migration Button (Temporary) -->
+                            <button class="btn btn-secondary" id="migrate-data-btn" style="margin-right: 10px;">
+                                <span>🔄 Verileri Senkronize Et</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="apartments-list" class="apartments-grid">
+                        <!-- Populated by JS -->
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Daire bilgileri yükleniyor...</p>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -770,6 +795,60 @@
             </div>
         </div>
 
+        <!-- Apartment Edit Modal (NEW) -->
+        <div class="modal" id="apartment-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="apartment-modal-title">Daire Düzenle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="apartment-form" class="modal-form">
+                    <input type="hidden" id="apartment-id">
+
+                    <div class="form-group">
+                        <label for="apartment-resident">Sakin Adı Soyadı</label>
+                        <input type="text" id="apartment-resident" placeholder="Örn: Ahmet Yılmaz">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apartment-status">Durum</label>
+                        <select id="apartment-status" required>
+                            <option value="owner">Ev Sahibi (Oturuyor)</option>
+                            <option value="tenant">Kiracı</option>
+                            <option value="empty">Boş</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apartment-owner">Mülk Sahibi</label>
+                        <input type="text" id="apartment-owner" placeholder="Örn: Mehmet Demir">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apartment-phone">Telefon Numarası</label>
+                        <input type="tel" id="apartment-phone" placeholder="05XX XXX XX XX">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apartment-count">Kişi Sayısı</label>
+                            <input type="number" id="apartment-count" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="apartment-move-in">Giriş Tarihi</label>
+                            <input type="date" id="apartment-move-in">
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- View Bill Modal -->
         <div class="modal" id="view-bill-modal">
             <div class="modal-overlay"></div>
@@ -790,7 +869,7 @@
         <div id="toast-container" class="toast-container"></div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

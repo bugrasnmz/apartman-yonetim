@@ -1,14 +1,22 @@
 /* =========================================
    Apartman Yönetim Sistemi - JavaScript
-   Phase 2: Enhanced Dashboard
+   Phase 3: Firebase Integration
    ========================================= */
+
+import {
+    db, auth, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS
+} from './firebase-config.js';
+
+window.db = db; // Debug purposes
+
 
 // ===== Constants =====
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
     'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
     'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_PASSWORD = 'Eb27092024';
 const TOTAL_APARTMENTS = 12;
 
 const CATEGORY_LABELS = {
@@ -40,7 +48,7 @@ const PRIORITY_LABELS = {
 // ===== State Management =====
 const AppState = {
     currentUser: null,
-    currentPage: 'login',
+    currentPage: 'login-page',
     currentSection: 'overview',
     currentYear: new Date().getFullYear(),
     currentTaskFilter: 'all',
@@ -52,48 +60,147 @@ const AppState = {
     transactions: [],
     maintenance: [],
     tasks: [],
+    apartments: [], // New Collection
     settings: { monthlyDueAmount: 500 },
 
     // Charts
     charts: {}
 };
 
-// ===== Local Storage =====
+// ===== Firebase Data Service =====
+// Replacing Local Storage with Firestore
+const FirebaseService = {
+    async loadCollection(colName) {
+        try {
+            const querySnapshot = await getDocs(collection(db, colName));
+            if (querySnapshot.empty) return [];
+            return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (e) {
+            console.error(`Error loading ${colName}:`, e);
+            throw e;
+        }
+    },
+
+    // Wrapper to maintain similar API structure, but Async
+    async save(colName, id, data) {
+        try {
+            await setDoc(doc(db, colName, id), data, { merge: true });
+        } catch (e) {
+            console.error(`Error saving to ${colName}:`, e);
+            showToast('Kaydetme hatası!', 'error');
+        }
+    },
+
+    async add(colName, data) {
+        try {
+            // Use setDoc if id is provided, else addDoc
+            if (data.id) {
+                await setDoc(doc(db, colName, data.id), data);
+                return data.id;
+            } else {
+                const docRef = await addDoc(collection(db, colName), data);
+                return docRef.id;
+            }
+        } catch (e) {
+            console.error(`Error adding to ${colName}:`, e);
+            throw e;
+        }
+    },
+
+    async delete(colName, id) {
+        try {
+            await deleteDoc(doc(db, colName, id));
+        } catch (e) {
+            console.error(`Error deleting from ${colName}:`, e);
+            showToast('Silme hatası!', 'error');
+        }
+    }
+};
+
+// Legacy Storage Adapter (for compatibility)
+// We use this to persist local changes to Firestore asynchronously
 const Storage = {
     save(key, data) {
-        try { localStorage.setItem(`apt_${key}`, JSON.stringify(data)); }
-        catch (e) { console.error('Storage save error:', e); }
+        // 'data' here is usually the full array/object. 
+        // For Firestore, we typically update individual items.
+        // However, for parts of the app that rely on saving the *entire* state (like settings),
+        // we can save to a single document or treat it differently.
+
+        // Strategy: We won't use Storage.save for massive arrays anymore.
+        // We will update individual items in the respective functions (addTransaction, etc).
+        // Only 'settings' and 'dues' might need special handling.
+
+        if (key === 'settings') {
+            FirebaseService.save(COLLECTIONS.SETTINGS, 'config', data);
+        } else if (key === 'dues') {
+            // For dues, 'data' is the whole year structure.
+            // We should save per year.
+            const year = AppState.currentYear;
+            if (data[year]) {
+                FirebaseService.save(COLLECTIONS.DUES, year.toString(), data[year]);
+            }
+        }
     },
-    load(key, defaultValue = null) {
-        try {
-            const data = localStorage.getItem(`apt_${key}`);
-            return data ? JSON.parse(data) : defaultValue;
-        } catch (e) { return defaultValue; }
-    },
-    remove(key) { localStorage.removeItem(`apt_${key}`); }
+    load(key, defaultValue) { return defaultValue; }, // Deprecated for direct use
+    remove(key) { }
 };
 
 // ===== Initialize Data =====
-function initializeData() {
-    AppState.bills = Storage.load('bills', []);
-    AppState.decisions = Storage.load('decisions', []);
-    AppState.transactions = Storage.load('transactions', []);
-    AppState.maintenance = Storage.load('maintenance', []);
-    AppState.tasks = Storage.load('tasks', []);
-    AppState.settings = Storage.load('settings', { monthlyDueAmount: 500 });
+async function initializeData() {
+    showToast('Veriler yükleniyor...', 'info');
 
-    const savedDues = Storage.load('dues', {});
-    AppState.dues = savedDues;
+    try {
+        // Load in parallel
+        const [
+            bills, decisions, transactions, maintenance, tasks, settingsDoc, currentDuesDoc, apartments
+        ] = await Promise.all([
+            FirebaseService.loadCollection(COLLECTIONS.BILLS),
+            FirebaseService.loadCollection(COLLECTIONS.DECISIONS),
+            FirebaseService.loadCollection(COLLECTIONS.TRANSACTIONS),
+            FirebaseService.loadCollection(COLLECTIONS.MAINTENANCE),
+            FirebaseService.loadCollection(COLLECTIONS.TASKS),
+            getDoc(doc(db, COLLECTIONS.SETTINGS, 'config')),
+            getDoc(doc(db, COLLECTIONS.DUES, AppState.currentYear.toString())),
+            FirebaseService.loadCollection(COLLECTIONS.APARTMENTS)
+        ]);
 
-    if (!AppState.dues[AppState.currentYear]) {
-        AppState.dues[AppState.currentYear] = {};
-        for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
-            AppState.dues[AppState.currentYear][apt] = {};
-            for (let month = 1; month <= 12; month++) {
-                AppState.dues[AppState.currentYear][apt][month] = false;
+        AppState.bills = bills;
+        AppState.decisions = decisions;
+        AppState.transactions = transactions;
+        AppState.maintenance = maintenance;
+        AppState.tasks = tasks;
+        AppState.apartments = apartments; // New Collection
+
+        if (settingsDoc.exists()) {
+            AppState.settings = settingsDoc.data();
+        }
+
+        AppState.dues = {};
+        if (currentDuesDoc.exists()) {
+            AppState.dues[AppState.currentYear] = currentDuesDoc.data();
+        } else {
+            // Initialize empty dues for current year
+            AppState.dues[AppState.currentYear] = {};
+            for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
+                AppState.dues[AppState.currentYear][apt] = {};
+                for (let month = 1; month <= 12; month++) {
+                    AppState.dues[AppState.currentYear][apt][month] = false;
+                }
             }
         }
-        Storage.save('dues', AppState.dues);
+
+        refreshCurrentView();
+        showToast('Veriler güncellendi', 'success');
+
+    } catch (error) {
+        console.error("Init Error:", error);
+        showToast('Veri yükleme hatası: ' + error.message, 'error');
+    }
+}
+
+function refreshCurrentView() {
+    if (AppState.currentPage) {
+        showSection(AppState.currentSection);
     }
 }
 
@@ -130,6 +237,7 @@ function refreshSection(sectionId) {
         case 'maintenance': renderMaintenance(); break;
         case 'tasks': renderTasks(); break;
         case 'decisions': renderDecisions(); break;
+        case 'apartments': renderApartments(); break;
         case 'resident-overview': updateResidentDashboard(); break;
         case 'resident-bills': renderResidentBills(); break;
         case 'resident-decisions': renderResidentDecisions(); break;
@@ -137,23 +245,33 @@ function refreshSection(sectionId) {
 }
 
 // ===== Authentication =====
-function loginAdmin(password) {
-    if (password === ADMIN_PASSWORD) {
-        AppState.currentUser = { role: 'admin' };
-        Storage.save('currentUser', AppState.currentUser);
+// ===== Authentication =====
+async function loginAdmin(password) {
+    // Hardcoded email for admin convenience
+    const email = "admin@apartman.com";
+
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
+
         showPage('admin-dashboard');
+        await initializeData(); // Load data after successful login
         showSection('overview');
         showToast('Hoş geldiniz, Yönetici!', 'success');
         return true;
+    } catch (error) {
+        console.error("Login error:", error);
+        showToast('Giriş başarısız! Parolayı kontrol edin.', 'error');
+        return false;
     }
-    showToast('Hatalı şifre!', 'error');
-    return false;
 }
 
 function loginResident(apartmentNumber) {
     if (apartmentNumber >= 1 && apartmentNumber <= TOTAL_APARTMENTS) {
         AppState.currentUser = { role: 'resident', apartment: apartmentNumber };
-        Storage.save('currentUser', AppState.currentUser);
+        localStorage.setItem('localResident', JSON.stringify(AppState.currentUser));
         document.getElementById('resident-apartment-badge').textContent = `Daire ${apartmentNumber}`;
         document.getElementById('resident-welcome-text').textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
         showPage('resident-dashboard');
@@ -165,29 +283,44 @@ function loginResident(apartmentNumber) {
     return false;
 }
 
-function logout() {
-    AppState.currentUser = null;
-    Storage.remove('currentUser');
-    destroyAllCharts();
-    showPage('login-page');
-    showToast('Çıkış yapıldı', 'success');
+async function logout() {
+    try {
+        await signOut(auth);
+        localStorage.removeItem('localResident');
+        AppState.currentUser = null;
+        destroyAllCharts();
+        showPage('login-page');
+        showToast('Çıkış yapıldı', 'success');
+    } catch (error) {
+        console.error("Logout error", error);
+    }
 }
 
 function checkAuth() {
-    const savedUser = Storage.load('currentUser');
-    if (savedUser) {
-        AppState.currentUser = savedUser;
-        if (savedUser.role === 'admin') {
-            showPage('admin-dashboard');
-            showSection('overview');
-        } else {
-            document.getElementById('resident-apartment-badge').textContent = `Daire ${savedUser.apartment}`;
-            document.getElementById('resident-welcome-text').textContent = `Daire ${savedUser.apartment} - Apartman bilgileri ve durumu`;
-            showPage('resident-dashboard');
-            showSection('resident-overview');
+    // Listen to Firebase Auth State (Async)
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Admin is logged in
+            AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
+            // If on login page, redirect
+            if (AppState.currentPage === 'login-page') {
+                showPage('admin-dashboard');
+                showSection('overview');
+            }
         }
-    }
+        // If resident, it's client-side state, kept in memory (or re-login needed)
+        // We can check if we have a resident set manually if we want persistence
+        // For now, simpler to require re-selection for residents on refresh or use local storage for resident ID.
+        else {
+            const localResident = localStorage.getItem('localResident');
+            if (localResident) {
+                const residentData = JSON.parse(localResident);
+                loginResident(residentData.apartment);
+            }
+        }
+    });
 }
+
 
 // ===== Overview Stats =====
 function updateOverviewStats() {
@@ -324,8 +457,8 @@ function renderTransactions() {
 
 function addTransaction(data) {
     const transaction = { id: generateId(), ...data, createdAt: new Date().toISOString() };
-    AppState.transactions.push(transaction);
-    Storage.save('transactions', AppState.transactions);
+    AppState.transactions.push(transaction); // Optimistic UI
+    FirebaseService.add(COLLECTIONS.TRANSACTIONS, transaction);
     showToast('Kayıt eklendi', 'success');
     return transaction;
 }
@@ -333,8 +466,9 @@ function addTransaction(data) {
 function updateTransaction(id, data) {
     const index = AppState.transactions.findIndex(t => t.id === id);
     if (index !== -1) {
-        AppState.transactions[index] = { ...AppState.transactions[index], ...data };
-        Storage.save('transactions', AppState.transactions);
+        const updated = { ...AppState.transactions[index], ...data };
+        AppState.transactions[index] = updated;
+        FirebaseService.save(COLLECTIONS.TRANSACTIONS, id, updated);
         showToast('Kayıt güncellendi', 'success');
         return true;
     }
@@ -344,7 +478,7 @@ function updateTransaction(id, data) {
 function deleteTransaction(id) {
     if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
     AppState.transactions = AppState.transactions.filter(t => t.id !== id);
-    Storage.save('transactions', AppState.transactions);
+    FirebaseService.delete(COLLECTIONS.TRANSACTIONS, id);
     renderTransactions();
     updateFinanceSummary();
     showToast('Kayıt silindi', 'success');
@@ -392,7 +526,7 @@ function renderMaintenance() {
 function addMaintenance(data) {
     const m = { id: generateId(), ...data, createdAt: new Date().toISOString() };
     AppState.maintenance.push(m);
-    Storage.save('maintenance', AppState.maintenance);
+    FirebaseService.add(COLLECTIONS.MAINTENANCE, m);
     showToast('Bakım kaydı eklendi', 'success');
     return m;
 }
@@ -400,8 +534,9 @@ function addMaintenance(data) {
 function updateMaintenance(id, data) {
     const index = AppState.maintenance.findIndex(m => m.id === id);
     if (index !== -1) {
-        AppState.maintenance[index] = { ...AppState.maintenance[index], ...data };
-        Storage.save('maintenance', AppState.maintenance);
+        const updated = { ...AppState.maintenance[index], ...data };
+        AppState.maintenance[index] = updated;
+        FirebaseService.save(COLLECTIONS.MAINTENANCE, id, updated);
         showToast('Bakım kaydı güncellendi', 'success');
         return true;
     }
@@ -411,7 +546,7 @@ function updateMaintenance(id, data) {
 function deleteMaintenance(id) {
     if (!confirm('Bu bakım kaydını silmek istediğinizden emin misiniz?')) return;
     AppState.maintenance = AppState.maintenance.filter(m => m.id !== id);
-    Storage.save('maintenance', AppState.maintenance);
+    FirebaseService.delete(COLLECTIONS.MAINTENANCE, id);
     renderMaintenance();
     showToast('Bakım kaydı silindi', 'success');
 }
@@ -471,7 +606,7 @@ function renderTasks() {
 function addTask(data) {
     const task = { id: generateId(), ...data, createdAt: new Date().toISOString() };
     AppState.tasks.push(task);
-    Storage.save('tasks', AppState.tasks);
+    FirebaseService.add(COLLECTIONS.TASKS, task);
     showToast('İş kaydı eklendi', 'success');
     return task;
 }
@@ -479,8 +614,9 @@ function addTask(data) {
 function updateTask(id, data) {
     const index = AppState.tasks.findIndex(t => t.id === id);
     if (index !== -1) {
-        AppState.tasks[index] = { ...AppState.tasks[index], ...data };
-        Storage.save('tasks', AppState.tasks);
+        const updated = { ...AppState.tasks[index], ...data };
+        AppState.tasks[index] = updated;
+        FirebaseService.save(COLLECTIONS.TASKS, id, updated);
         showToast('İş kaydı güncellendi', 'success');
         return true;
     }
@@ -490,7 +626,7 @@ function updateTask(id, data) {
 function deleteTask(id) {
     if (!confirm('Bu iş kaydını silmek istediğinizden emin misiniz?')) return;
     AppState.tasks = AppState.tasks.filter(t => t.id !== id);
-    Storage.save('tasks', AppState.tasks);
+    FirebaseService.delete(COLLECTIONS.TASKS, id);
     renderTasks();
     showToast('İş kaydı silindi', 'success');
 }
@@ -585,7 +721,7 @@ function renderResidentBills() {
 function addBill(data) {
     const bill = { id: generateId(), ...data, createdAt: new Date().toISOString() };
     AppState.bills.push(bill);
-    Storage.save('bills', AppState.bills);
+    FirebaseService.add(COLLECTIONS.BILLS, bill);
     showToast('Fatura eklendi', 'success');
     return bill;
 }
@@ -593,8 +729,9 @@ function addBill(data) {
 function updateBill(id, data) {
     const index = AppState.bills.findIndex(b => b.id === id);
     if (index !== -1) {
-        AppState.bills[index] = { ...AppState.bills[index], ...data };
-        Storage.save('bills', AppState.bills);
+        const updated = { ...AppState.bills[index], ...data };
+        AppState.bills[index] = updated;
+        FirebaseService.save(COLLECTIONS.BILLS, id, updated);
         showToast('Fatura güncellendi', 'success');
         return true;
     }
@@ -604,7 +741,7 @@ function updateBill(id, data) {
 function deleteBill(id) {
     if (!confirm('Bu faturayı silmek istediğinizden emin misiniz?')) return;
     AppState.bills = AppState.bills.filter(b => b.id !== id);
-    Storage.save('bills', AppState.bills);
+    FirebaseService.delete(COLLECTIONS.BILLS, id);
     renderBills();
     showToast('Fatura silindi', 'success');
 }
@@ -735,7 +872,7 @@ function renderResidentDecisions() {
 function addDecision(data) {
     const decision = { id: generateId(), ...data, createdAt: new Date().toISOString() };
     AppState.decisions.push(decision);
-    Storage.save('decisions', AppState.decisions);
+    FirebaseService.add(COLLECTIONS.DECISIONS, decision);
     showToast('Karar eklendi', 'success');
     return decision;
 }
@@ -743,8 +880,9 @@ function addDecision(data) {
 function updateDecision(id, data) {
     const index = AppState.decisions.findIndex(d => d.id === id);
     if (index !== -1) {
-        AppState.decisions[index] = { ...AppState.decisions[index], ...data };
-        Storage.save('decisions', AppState.decisions);
+        const updated = { ...AppState.decisions[index], ...data };
+        AppState.decisions[index] = updated;
+        FirebaseService.save(COLLECTIONS.DECISIONS, id, updated);
         showToast('Karar güncellendi', 'success');
         return true;
     }
@@ -754,7 +892,7 @@ function updateDecision(id, data) {
 function deleteDecision(id) {
     if (!confirm('Bu kararı silmek istediğinizden emin misiniz?')) return;
     AppState.decisions = AppState.decisions.filter(d => d.id !== id);
-    Storage.save('decisions', AppState.decisions);
+    FirebaseService.delete(COLLECTIONS.DECISIONS, id);
     renderDecisions();
     showToast('Karar silindi', 'success');
 }
@@ -770,10 +908,173 @@ function editDecision(id) {
     openModal('decision-modal');
 }
 
+// ===== Apartments Management (NEW) =====
+function renderApartments() {
+    const container = document.getElementById('apartments-list');
+
+    // Sort apartments by number
+    const apartments = (AppState.apartments || []).sort((a, b) => a.number - b.number);
+
+    // If empty and not initialized, we could show placeholder or initialize 12 apts
+    // But assuming we migrate data or start fresh, let's show cards for 1-12
+
+    let html = '';
+
+    // Create map for easy lookup
+    const aptMap = {};
+    apartments.forEach(a => aptMap[a.number] = a);
+
+    for (let i = 1; i <= TOTAL_APARTMENTS; i++) {
+        const apt = aptMap[i] || { number: i, residentName: '-', status: 'empty' };
+
+        const statusClass = { 'owner': 'success', 'tenant': 'warning', 'empty': 'secondary' };
+        const statusLabel = { 'owner': 'Ev Sahibi', 'tenant': 'Kiracı', 'empty': 'Boş' };
+
+        html += `
+        <div class="apartment-card glass-card">
+            <div class="apt-header">
+                <div class="apt-number">No: ${apt.number}</div>
+                <div class="apt-status badge ${statusClass[apt.status] || 'secondary'}">${statusLabel[apt.status] || apt.status}</div>
+            </div>
+            <div class="apt-details">
+                <p><strong>Sakin:</strong> ${escapeHtml(apt.residentName || '-')}</p>
+                <p><strong>Telefon:</strong> ${escapeHtml(apt.phone || '-')}</p>
+                <p><strong>Kişi:</strong> ${apt.residentCount || 0}</p>
+            </div>
+            <div class="apt-actions">
+                <button class="btn btn-secondary btn-sm btn-full" onclick="editApartment('${apt.id || i}')">Düzenle</button>
+            </div>
+        </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+function editApartment(id) {
+    // If id is numeric (1-12), it's virtual. If string, it's document id?
+    // Let's rely on apartment number conceptually.
+    // If we passed ID, find by ID. If ID is number, find by number.
+
+    let apt;
+    if (AppState.apartments) {
+        apt = AppState.apartments.find(a => a.id === id || a.number == id);
+    }
+
+    if (!apt && !isNaN(id)) {
+        // Virtual apartment
+        apt = { number: parseInt(id), residentName: '', phone: '', status: 'empty', ownerName: '', residentCount: 0 };
+    }
+
+    document.getElementById('apartment-modal-title').textContent = `Daire ${apt.number} Düzenle`;
+    document.getElementById('apartment-id').value = apt.id || apt.number; // Store ID or Number if new
+    document.getElementById('apartment-resident').value = apt.residentName || '';
+    document.getElementById('apartment-status').value = apt.status || 'empty';
+    document.getElementById('apartment-owner').value = apt.ownerName || '';
+    document.getElementById('apartment-phone').value = apt.phone || '';
+    document.getElementById('apartment-count').value = apt.residentCount || 0;
+    document.getElementById('apartment-move-in').value = apt.moveInDate || '';
+
+    // Store number distinctly if it's a new record
+    document.getElementById('apartment-form').dataset.aptNumber = apt.number;
+
+    openModal('apartment-modal');
+}
+
+async function saveApartment(data) {
+    const number = parseInt(document.getElementById('apartment-form').dataset.aptNumber);
+
+    // Check if exists
+    let existing = (AppState.apartments || []).find(a => a.number === number);
+
+    // If exists, use its ID. If not, create new.
+    // ID from hidden field might be "7" (just number) or "firebase_doc_id"
+    // If existing found, prefer existing.id
+
+    const id = existing ? existing.id : null;
+
+    const aptData = { ...data, number };
+
+    if (id) {
+        // Update
+        const index = AppState.apartments.findIndex(a => a.id === id);
+        AppState.apartments[index] = { ...AppState.apartments[index], ...aptData };
+        await FirebaseService.save(COLLECTIONS.APARTMENTS, id, aptData);
+    } else {
+        // Add
+        // Use custom ID "apt_1" for cleaner DB or auto ID. Auto ID is fine.
+        const newId = await FirebaseService.add(COLLECTIONS.APARTMENTS, aptData);
+        aptData.id = newId;
+        if (!AppState.apartments) AppState.apartments = [];
+        AppState.apartments.push(aptData);
+    }
+
+    renderApartments();
+    showToast('Daire bilgileri güncellendi', 'success');
+}
+
+// ===== Migration Utility =====
+async function migrateData() {
+    if (!confirm("Mevcut tarayıcı verileri Firebase'e aklatılacak. Emin misiniz?")) return;
+
+    showToast('Veriler aktarılıyor...', 'info');
+
+    try {
+        // 1. Transactions
+        const transactions = JSON.parse(localStorage.getItem('apt_transactions') || '[]');
+        for (const t of transactions) {
+            await FirebaseService.save(COLLECTIONS.TRANSACTIONS, t.id, t);
+        }
+
+        // 2. Bills
+        const bills = JSON.parse(localStorage.getItem('apt_bills') || '[]');
+        for (const b of bills) {
+            await FirebaseService.save(COLLECTIONS.BILLS, b.id, b);
+        }
+
+        // 3. Decisions
+        const decisions = JSON.parse(localStorage.getItem('apt_decisions') || '[]');
+        for (const d of decisions) {
+            await FirebaseService.save(COLLECTIONS.DECISIONS, d.id, d);
+        }
+
+        // 4. Maintenance
+        const maintenance = JSON.parse(localStorage.getItem('apt_maintenance') || '[]');
+        for (const m of maintenance) {
+            await FirebaseService.save(COLLECTIONS.MAINTENANCE, m.id, m);
+        }
+
+        // 5. Tasks
+        const tasks = JSON.parse(localStorage.getItem('apt_tasks') || '[]');
+        for (const t of tasks) {
+            await FirebaseService.save(COLLECTIONS.TASKS, t.id, t);
+        }
+
+        showToast('Aktarım tamamlandı! Sayfa yenileniyor...', 'success');
+        setTimeout(() => location.reload(), 1500);
+
+    } catch (e) {
+        console.error("Migration failed", e);
+        showToast('Aktarım sırasında hata oluştu', 'error');
+    }
+}
+
 // ===== Resident Dashboard =====
+// ===== Resident Overview - Enhanced Dashboard (Updates)
 function updateResidentDashboard() {
     const apt = AppState.currentUser?.apartment;
     if (!apt) return;
+
+    // --- Update Welcome Text with Data from DB if available ---
+    let welcomeText = `Daire ${apt} - Apartman bilgileri ve durumu`;
+    if (AppState.apartments) {
+        const aptData = AppState.apartments.find(a => a.number === apt);
+        if (aptData && aptData.residentName) {
+            welcomeText = `Sn. ${aptData.residentName} (Daire ${apt})`;
+        }
+    }
+    document.getElementById('resident-welcome-text').textContent = welcomeText;
+    // -----------------------------------------------------
 
     const year = AppState.currentYear;
     const currentMonth = new Date().getMonth() + 1;
@@ -1050,6 +1351,37 @@ function formatDate(dateStr) { return new Intl.DateTimeFormat('tr-TR', { day: 'n
 function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = reject; }); }
 
+// ===== Global Window Exports (Required for modules) =====
+window.loginAdmin = loginAdmin;
+window.loginResident = loginResident;
+window.logout = logout;
+window.showSection = showSection;
+window.editTransaction = editTransaction;
+window.deleteTransaction = deleteTransaction;
+window.editBill = editBill;
+window.viewBill = viewBill;
+window.deleteBill = deleteBill;
+window.toggleDue = toggleDue;
+window.editDecision = editDecision;
+window.deleteDecision = deleteDecision;
+window.editMaintenance = editMaintenance;
+window.deleteMaintenance = deleteMaintenance;
+window.editTask = editTask;
+window.deleteTask = deleteTask;
+window.viewTaskDetail = viewTaskDetail;
+window.editApartment = editApartment; // New
+window.renderBills = renderBills;
+window.renderDuesTable = renderDuesTable;
+window.updateMonthlyDueAmount = updateMonthlyDueAmount;
+window.renderTransactions = renderTransactions;
+window.updateFinanceSummary = updateFinanceSummary;
+window.renderMaintenance = renderMaintenance;
+window.renderDecisions = renderDecisions;
+window.renderRecentDecisions = renderRecentDecisions;
+window.renderTasks = renderTasks;
+window.closeAllModals = closeAllModals;
+window.migrateData = migrateData; // New
+
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
     initializeData();
@@ -1066,7 +1398,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Login Forms
-    document.getElementById('admin-login-form').addEventListener('submit', e => { e.preventDefault(); loginAdmin(document.getElementById('admin-password').value); });
+    document.getElementById('admin-login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<span class="spinner-sm"></span> Giriş Yapılıyor...`;
+        btn.disabled = true;
+
+        await loginAdmin(document.getElementById('admin-password').value);
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
     document.getElementById('resident-login-form').addEventListener('submit', e => { e.preventDefault(); loginResident(parseInt(document.getElementById('apartment-number').value)); });
 
     // Logout
@@ -1102,12 +1445,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-maintenance-btn').addEventListener('click', () => { document.getElementById('maintenance-modal-title').textContent = 'Bakım Ekle'; document.getElementById('maintenance-id').value = ''; document.getElementById('maintenance-date').value = new Date().toISOString().split('T')[0]; openModal('maintenance-modal'); });
     document.getElementById('add-task-btn').addEventListener('click', () => { document.getElementById('task-modal-title').textContent = 'İş Ekle'; document.getElementById('task-id').value = ''; openModal('task-modal'); });
 
+    // Migration Button
+    const migrateBtn = document.getElementById('migrate-data-btn');
+    if (migrateBtn) migrateBtn.addEventListener('click', migrateData);
+
     // Filters
     document.getElementById('bill-year-filter').addEventListener('change', renderBills);
     document.getElementById('dues-year-select').addEventListener('change', renderDuesTable);
     document.getElementById('monthly-due-amount').addEventListener('change', updateMonthlyDueAmount);
     document.getElementById('transaction-type-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
     document.getElementById('transaction-year-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
+
+    // Apartment Form
+    document.getElementById('apartment-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const data = {
+            residentName: document.getElementById('apartment-resident').value,
+            status: document.getElementById('apartment-status').value,
+            ownerName: document.getElementById('apartment-owner').value,
+            phone: document.getElementById('apartment-phone').value,
+            residentCount: parseInt(document.getElementById('apartment-count').value),
+            moveInDate: document.getElementById('apartment-move-in').value
+        };
+        await saveApartment(data);
+        closeModal('apartment-modal');
+    });
 
     // Form Submissions
     document.getElementById('bill-form').addEventListener('submit', async e => {
