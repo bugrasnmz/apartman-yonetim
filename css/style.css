@@ -2166,29 +2166,45 @@ tbody tr:hover {
 
 /* ===== Compact Items (Resident Dashboard) ===== */
 .compact-item {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
-    cursor: pointer;
-    transition: background var(--transition-fast);
-}
-
-.compact-item:hover {
-    background: var(--bg-main);
-}
-
-.compact-item.clickable:hover {
-    background: var(--primary-light);
-    transform: translateX(4px);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: var(--bg-card);
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
 }
 
 .compact-item:last-child {
+    margin-bottom: 0;
     border-bottom: none;
+}
+
+.compact-item:hover {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 1) 0%, rgba(241, 245, 249, 1) 100%);
+}
+
+.compact-item.clickable {
+    cursor: pointer;
+}
+
+.compact-item.clickable:hover {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 1) 0%, rgba(241, 245, 249, 1) 100%);
+    border-left: 3px solid var(--primary);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .compact-item h4 {
     font-size: 14px;
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+}
+
+.compact-item.clickable:hover h4 {
+    color: var(--primary);
 }
 
 .compact-item p {
