@@ -1923,6 +1923,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('admin-logout').addEventListener('click', e => { e.preventDefault(); logout(); });
     document.getElementById('resident-logout').addEventListener('click', e => { e.preventDefault(); logout(); });
 
+    // Profile page logout button
+    const profileLogoutBtn = document.getElementById('profile-logout-btn');
+    if (profileLogoutBtn) {
+        profileLogoutBtn.addEventListener('click', () => logout());
+    }
+
     // Navigation
     document.querySelectorAll('#admin-dashboard .nav-link[data-section]').forEach(link => {
         link.addEventListener('click', e => { e.preventDefault(); showSection(link.dataset.section); document.getElementById('nav-links').classList.remove('active'); });
