@@ -1158,6 +1158,10 @@ function editApartment(id) {
     document.getElementById('apartment-count').value = apt.residentCount || 0;
     document.getElementById('apartment-move-in').value = apt.moveInDate || '';
 
+    // E-posta ve Şifre alanları
+    document.getElementById('apartment-email').value = apt.email || '';
+    document.getElementById('apartment-password-display').value = apt.password || '';
+
     // Store number distinctly if it's a new record
     document.getElementById('apartment-form').dataset.aptNumber = apt.number;
 
@@ -1175,6 +1179,20 @@ async function saveApartment(data) {
     // If existing found, prefer existing.id
 
     const id = existing ? existing.id : null;
+
+    // If status is empty, clear all data except number and status
+    if (data.status === 'empty') {
+        data = {
+            status: 'empty',
+            residentName: '',
+            ownerName: '',
+            phone: '',
+            email: '',
+            password: '',
+            residentCount: 0,
+            moveInDate: ''
+        };
+    }
 
     const aptData = { ...data, number };
 
@@ -1289,6 +1307,39 @@ function updateResidentDashboard() {
     renderResidentTasks();
     renderResidentRecentDecisions();
     initResidentCharts();
+    loadResidentProfile();
+}
+
+// Load Resident Profile Data
+function loadResidentProfile() {
+    const apt = AppState.currentUser?.apartment;
+    console.log('Loading profile for apartment:', apt, 'Available apartments:', AppState.apartments);
+
+    const aptData = (AppState.apartments || []).find(a => a.number === apt);
+    console.log('Found apartment data:', aptData);
+
+    if (!aptData) {
+        console.warn('Apartment data not found for apartment:', apt);
+        return;
+    }
+
+    const nameEl = document.getElementById('profile-resident-name');
+    const phoneEl = document.getElementById('profile-phone');
+    const emailEl = document.getElementById('profile-email');
+    const countEl = document.getElementById('profile-resident-count');
+    const statusEl = document.getElementById('profile-status-display');
+
+    if (nameEl) nameEl.value = aptData.residentName || '';
+    if (phoneEl) phoneEl.value = aptData.phone || '';
+    if (emailEl) emailEl.value = aptData.email || '';
+    if (countEl) countEl.value = aptData.residentCount || 0;
+
+    const statusMap = {
+        'owner': 'Ev Sahibi (Oturuyor)',
+        'tenant': 'Kiracı',
+        'empty': 'Boş'
+    };
+    if (statusEl) statusEl.textContent = statusMap[aptData.status] || '-';
 }
 
 // Resident Dues Bar Chart
@@ -1697,6 +1748,76 @@ function closeAllModals() {
     document.querySelectorAll('.modal.active').forEach(m => closeModal(m.id));
 }
 
+// ===== EmailJS Configuration =====
+const EMAILJS_CONFIG = {
+    publicKey: 'i3HiqqXMzlLWBnTa0',
+    serviceId: 'service_ngccee8',
+    templateId: 'template_7ql661b'
+};
+
+// Initialize EmailJS (call after page load)
+function initEmailJS() {
+    if (typeof emailjs !== 'undefined' && EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
+        emailjs.init(EMAILJS_CONFIG.publicKey);
+        console.log('EmailJS initialized');
+    }
+}
+
+// ===== Password Functions =====
+function generatePassword(length = 6) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars (0, O, 1, I)
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+async function sendPasswordEmail(apartmentNumber) {
+    const apt = (AppState.apartments || []).find(a => a.number === apartmentNumber);
+
+    if (!apt) {
+        showToast('Daire bulunamadı!', 'error');
+        return false;
+    }
+
+    if (!apt.email) {
+        showToast('E-posta adresi girilmemiş!', 'error');
+        return false;
+    }
+
+    if (!apt.password) {
+        showToast('Önce şifre oluşturun!', 'error');
+        return false;
+    }
+
+    // Check if EmailJS is configured
+    if (EMAILJS_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
+        // EmailJS not configured - show manual instructions
+        showToast('EmailJS yapılandırılmamış. Şifre bilgisi gösteriliyor...', 'warning');
+        alert(`Daire ${apartmentNumber} için giriş bilgileri:\n\nE-posta: ${apt.email}\nŞifre: ${apt.password}\n\nBu bilgileri sakine manuel olarak iletebilirsiniz.`);
+        return true;
+    }
+
+    try {
+        // Send email via EmailJS
+        await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+            email: apt.email,
+            to_name: apt.residentName || `Daire ${apartmentNumber} Sakini`,
+            apartment_number: apartmentNumber,
+            password: apt.password,
+            login_url: window.location.origin
+        });
+
+        showToast('Şifre e-posta ile gönderildi!', 'success');
+        return true;
+    } catch (error) {
+        console.error('EmailJS Error:', error);
+        showToast('E-posta gönderilemedi: ' + (error.text || error.message), 'error');
+        return false;
+    }
+}
+
 // ===== Toast =====
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
@@ -1751,6 +1872,7 @@ window.migrateData = migrateData; // New
 document.addEventListener('DOMContentLoaded', () => {
     initializeData();
     checkAuth();
+    initEmailJS();
 
     // Login Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1775,7 +1897,27 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = originalText;
         btn.disabled = false;
     });
-    document.getElementById('resident-login-form').addEventListener('submit', e => { e.preventDefault(); loginResident(parseInt(document.getElementById('apartment-number').value)); });
+    document.getElementById('resident-login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const apartmentNumber = parseInt(document.getElementById('apartment-number').value);
+        const password = document.getElementById('resident-password').value;
+
+        // Şifre doğrulama
+        const apt = (AppState.apartments || []).find(a => a.number === apartmentNumber);
+
+        if (!apt || !apt.password) {
+            showToast('Bu daire için şifre tanımlanmamış. Yöneticinize başvurun.', 'error');
+            return;
+        }
+
+        if (apt.password !== password) {
+            showToast('Şifre hatalı!', 'error');
+            return;
+        }
+
+        // Şifre doğru, giriş yap
+        loginResident(apartmentNumber);
+    });
 
     // Logout
     document.getElementById('admin-logout').addEventListener('click', e => { e.preventDefault(); logout(); });
@@ -1869,10 +2011,40 @@ document.addEventListener('DOMContentLoaded', () => {
             ownerName: document.getElementById('apartment-owner').value,
             phone: document.getElementById('apartment-phone').value,
             residentCount: parseInt(document.getElementById('apartment-count').value),
-            moveInDate: document.getElementById('apartment-move-in').value
+            moveInDate: document.getElementById('apartment-move-in').value,
+            email: document.getElementById('apartment-email').value,
+            password: document.getElementById('apartment-password-display').value
         };
         await saveApartment(data);
         closeModal('apartment-modal');
+    });
+
+    // Password Management Buttons
+    document.getElementById('generate-password-btn').addEventListener('click', () => {
+        const newPassword = generatePassword();
+        document.getElementById('apartment-password-display').value = newPassword;
+        showToast('Yeni şifre oluşturuldu: ' + newPassword, 'success');
+    });
+
+    document.getElementById('send-password-btn').addEventListener('click', async () => {
+        const aptNumber = parseInt(document.getElementById('apartment-form').dataset.aptNumber);
+
+        // First save the current form data (including password)
+        const data = {
+            residentName: document.getElementById('apartment-resident').value,
+            status: document.getElementById('apartment-status').value,
+            ownerName: document.getElementById('apartment-owner').value,
+            phone: document.getElementById('apartment-phone').value,
+            residentCount: parseInt(document.getElementById('apartment-count').value),
+            moveInDate: document.getElementById('apartment-move-in').value,
+            email: document.getElementById('apartment-email').value,
+            password: document.getElementById('apartment-password-display').value
+        };
+
+        await saveApartment(data);
+
+        // Then send email
+        await sendPasswordEmail(aptNumber);
     });
 
     // Form Submissions
@@ -1923,6 +2095,97 @@ document.addEventListener('DOMContentLoaded', () => {
         if (id) updateTask(id, data); else addTask(data);
         closeModal('task-modal'); renderTasks();
     });
+
+    // Resident Profile Form
+    const residentProfileForm = document.getElementById('resident-profile-form');
+    if (residentProfileForm) {
+        residentProfileForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const apt = AppState.currentUser?.apartment;
+            const aptData = (AppState.apartments || []).find(a => a.number === apt);
+
+            if (!aptData) {
+                showToast('Daire bulunamadı!', 'error');
+                return;
+            }
+
+            // Only update allowed fields (not status, password, etc.)
+            const updateData = {
+                ...aptData,
+                residentName: document.getElementById('profile-resident-name').value,
+                phone: document.getElementById('profile-phone').value,
+                email: document.getElementById('profile-email').value,
+                residentCount: parseInt(document.getElementById('profile-resident-count').value) || 0
+            };
+
+            // Save via Firebase
+            if (aptData.id) {
+                const index = AppState.apartments.findIndex(a => a.id === aptData.id);
+                AppState.apartments[index] = updateData;
+                await FirebaseService.save(COLLECTIONS.APARTMENTS, aptData.id, updateData);
+            }
+
+            showToast('Bilgileriniz güncellendi!', 'success');
+
+            // Update mobile profile header
+            const mobileProfileName = document.getElementById('mobile-profile-name');
+            if (mobileProfileName) {
+                mobileProfileName.textContent = updateData.residentName || 'Sakin';
+            }
+        });
+    }
+
+    // Password Change Form
+    const passwordChangeForm = document.getElementById('password-change-form');
+    if (passwordChangeForm) {
+        passwordChangeForm.addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const apt = AppState.currentUser?.apartment;
+            const aptData = (AppState.apartments || []).find(a => a.number === apt);
+
+            if (!aptData) {
+                showToast('Daire bulunamadı!', 'error');
+                return;
+            }
+
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            // Validate current password
+            if (aptData.password !== currentPassword) {
+                showToast('Mevcut şifre hatalı!', 'error');
+                return;
+            }
+
+            // Validate new passwords match
+            if (newPassword !== confirmPassword) {
+                showToast('Yeni şifreler eşleşmiyor!', 'error');
+                return;
+            }
+
+            // Validate minimum length
+            if (newPassword.length < 4) {
+                showToast('Şifre en az 4 karakter olmalı!', 'error');
+                return;
+            }
+
+            // Update password
+            aptData.password = newPassword;
+
+            if (aptData.id) {
+                const index = AppState.apartments.findIndex(a => a.id === aptData.id);
+                AppState.apartments[index] = aptData;
+                await FirebaseService.save(COLLECTIONS.APARTMENTS, aptData.id, aptData);
+            }
+
+            showToast('Şifreniz başarıyla değiştirildi!', 'success');
+
+            // Clear form
+            passwordChangeForm.reset();
+        });
+    }
 
     // Modal Close
     document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => btn.addEventListener('click', closeAllModals));

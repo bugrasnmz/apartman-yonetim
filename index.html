@@ -10,9 +10,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=4.5">
+    <link rel="stylesheet" href="css/style.css?v=4.7">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 
 <body>
@@ -72,8 +74,16 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label for="resident-password">Şifre</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">🔑</span>
+                                <input type="password" id="resident-password" placeholder="Şifrenizi girin" required>
+                            </div>
+                            <small class="form-hint">Şifrenizi bilmiyorsanız yöneticinize başvurun.</small>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span>Dashboard'a Git</span>
+                            <span>Giriş Yap</span>
                             <span class="btn-icon">→</span>
                         </button>
                     </form>
@@ -536,6 +546,10 @@
                         <span class="nav-icon">📋</span>
                         <span>Kararlar</span>
                     </a>
+                    <a href="#" class="nav-link" data-section="resident-profile">
+                        <span class="nav-icon">👤</span>
+                        <span>Profilim</span>
+                    </a>
                     <a href="#" class="nav-link logout-link" id="resident-logout">
                         <span class="nav-icon">🚪</span>
                         <span>Çıkış</span>
@@ -687,6 +701,78 @@
                         <p class="empty-state">Henüz karar eklenmemiş</p>
                     </div>
                 </section>
+
+                <!-- Resident Profile -->
+                <section id="resident-profile-section" class="section">
+                    <div class="section-header">
+                        <h2>👤 Profilim</h2>
+                        <p>Daire bilgilerinizi görüntüleyin ve güncelleyin</p>
+                    </div>
+
+                    <div class="profile-card glass-card">
+                        <form id="resident-profile-form" class="modal-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-resident-name">Ad Soyad</label>
+                                    <input type="text" id="profile-resident-name" placeholder="Adınız Soyadınız">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-phone">Telefon</label>
+                                    <input type="tel" id="profile-phone" placeholder="05XX XXX XX XX">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-email">E-posta</label>
+                                    <input type="email" id="profile-email" placeholder="ornek@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-resident-count">Kişi Sayısı</label>
+                                    <input type="number" id="profile-resident-count" min="0" value="0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Daire Durumu</label>
+                                <p class="form-value" id="profile-status-display">-</p>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <span>💾</span>
+                                <span>Bilgilerimi Güncelle</span>
+                            </button>
+                        </form>
+
+                        <!-- Password Change Section -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">🔐 Şifre Değiştir</h4>
+                            <form id="password-change-form">
+                                <div class="form-group">
+                                    <label for="current-password">Mevcut Şifre</label>
+                                    <input type="password" id="current-password" placeholder="Mevcut şifrenizi girin"
+                                        required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="new-password">Yeni Şifre</label>
+                                        <input type="password" id="new-password" placeholder="Yeni şifre" required
+                                            minlength="4">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirm-password">Yeni Şifre (Tekrar)</label>
+                                        <input type="password" id="confirm-password" placeholder="Tekrar girin" required
+                                            minlength="4">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <span>🔑</span>
+                                    <span>Şifremi Değiştir</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <!-- Mobile Bottom Tab Bar -->
@@ -699,9 +785,9 @@
                     <span class="tab-icon">⚡</span>
                     <span class="tab-label">Faturalar</span>
                 </button>
-                <button class="tab-item" data-section="resident-decisions">
-                    <span class="tab-icon">📋</span>
-                    <span class="tab-label">Kararlar</span>
+                <button class="tab-item" data-section="resident-profile">
+                    <span class="tab-icon">👤</span>
+                    <span class="tab-label">Profil</span>
                 </button>
                 <button class="tab-item" id="tab-menu-toggle">
                     <span class="tab-icon">☰</span>
@@ -1041,6 +1127,32 @@
                             <label for="apartment-move-in">Giriş Tarihi</label>
                             <input type="date" id="apartment-move-in">
                         </div>
+                    </div>
+
+                    <!-- E-posta ve Şifre Yönetimi -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">🔐 Giriş Bilgileri</h4>
+
+                        <div class="form-group">
+                            <label for="apartment-email">E-posta Adresi</label>
+                            <input type="email" id="apartment-email" placeholder="ornek@email.com">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="apartment-password-display">Mevcut Şifre</label>
+                                <div class="password-display-wrapper">
+                                    <input type="text" id="apartment-password-display" readonly placeholder="Şifre yok">
+                                    <button type="button" class="btn btn-sm btn-secondary" id="generate-password-btn"
+                                        title="Yeni Şifre Oluştur">🔄</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-success btn-full" id="send-password-btn">
+                            <span>📧</span>
+                            <span>Şifreyi E-posta ile Gönder</span>
+                        </button>
                     </div>
 
                     <div class="modal-actions">
