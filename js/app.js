@@ -68,6 +68,53 @@ function toggleTheme() {
 // Initialize theme immediately to prevent flash
 initTheme();
 
+// ===== Skeleton Loading Helpers =====
+function createSkeletonCards(count = 3, type = 'stat') {
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        if (type === 'stat') {
+            html += `
+                <div class="skeleton-stat skeleton-pulse">
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton skeleton-value"></div>
+                    <div class="skeleton skeleton-label"></div>
+                </div>`;
+        } else if (type === 'card') {
+            html += `
+                <div class="skeleton-card skeleton-pulse">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
+                </div>`;
+        } else if (type === 'list') {
+            html += `
+                <div class="skeleton-list-item skeleton-pulse">
+                    <div class="skeleton skeleton-circle"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </div>`;
+        }
+    }
+    return html;
+}
+
+function showSkeleton(containerId, count = 3, type = 'stat') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `<div class="skeleton-grid">${createSkeletonCards(count, type)}</div>`;
+    }
+}
+
+function hideSkeleton(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        const skeleton = container.querySelector('.skeleton-grid');
+        if (skeleton) skeleton.remove();
+    }
+}
+
 // ===== State Management =====
 const AppState = {
     currentUser: null,
