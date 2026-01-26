@@ -524,23 +524,34 @@ body::before {
     background: var(--danger-bg) !important;
 }
 
-/* Sidebar Theme Toggle - styled like nav-link */
+/* Sidebar Footer - Theme & Logout aligned */
+.sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-footer .logout-link {
+    flex: 1;
+    margin-top: 0;
+}
+
+/* Sidebar Theme Toggle - icon only */
 .sidebar-theme-toggle {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    justify-content: center;
+    padding: 10px;
     color: var(--text-muted);
-    text-decoration: none;
     border-radius: var(--radius-md);
     transition: all var(--transition-normal);
-    font-size: 14px;
-    font-weight: 500;
     border: none;
-    background: transparent;
-    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
     cursor: pointer;
-    margin-bottom: 4px;
+    flex-shrink: 0;
 }
 
 .sidebar-theme-toggle:hover {
