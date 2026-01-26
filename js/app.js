@@ -68,6 +68,57 @@ function toggleTheme() {
 // Initialize theme immediately to prevent flash
 initTheme();
 
+// ===== Custom Cursor =====
+function initCustomCursor() {
+    const dot = document.querySelector('.cursor-dot');
+    const outline = document.querySelector('.cursor-outline');
+
+    if (!dot || !outline) return;
+
+    let mouseX = 0, mouseY = 0;
+    let outlineX = 0, outlineY = 0;
+
+    // Update cursor position on mouse move
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.left = mouseX + 'px';
+        dot.style.top = mouseY + 'px';
+    });
+
+    // Smooth outline following
+    function animateOutline() {
+        outlineX += (mouseX - outlineX) * 0.15;
+        outlineY += (mouseY - outlineY) * 0.15;
+        outline.style.left = outlineX + 'px';
+        outline.style.top = outlineY + 'px';
+        requestAnimationFrame(animateOutline);
+    }
+    animateOutline();
+
+    // Hover effect on interactive elements
+    const hoverElements = document.querySelectorAll('a, button, input, select, .card, .glass-card, .nav-link');
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            dot.classList.add('hover');
+            outline.classList.add('hover');
+        });
+        el.addEventListener('mouseleave', () => {
+            dot.classList.remove('hover');
+            outline.classList.remove('hover');
+        });
+    });
+
+    // Hide cursor on mobile
+    if ('ontouchstart' in window) {
+        dot.style.display = 'none';
+        outline.style.display = 'none';
+    }
+}
+
+// Initialize cursor after DOM load
+document.addEventListener('DOMContentLoaded', initCustomCursor);
+
 // ===== Skeleton Loading Helpers =====
 function createSkeletonCards(count = 3, type = 'stat') {
     let html = '';
@@ -2272,4 +2323,54 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => btn.addEventListener('click', closeAllModals));
     document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.addEventListener('click', closeAllModals));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllModals(); });
+});
+
+// ===== Scroll-Triggered Reveal Animations =====
+function initScrollReveal() {
+    const revealElements = document.querySelectorAll('.finance-stat-card, .dashboard-card, .glass-card, .transactions-container');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                // Staggered reveal with delay
+                setTimeout(() => {
+                    entry.target.classList.add('revealed');
+                }, index * 80);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+
+    revealElements.forEach(el => {
+        el.classList.add('reveal-on-scroll');
+        observer.observe(el);
+    });
+}
+
+// ===== Parallax Background Effect =====
+function initParallax() {
+    const particles = document.querySelector('.particles-container');
+    if (!particles) return;
+
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const scrollY = window.scrollY;
+                particles.style.transform = `translateY(${scrollY * 0.3}px)`;
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+}
+
+// Initialize scroll effects
+document.addEventListener('DOMContentLoaded', () => {
+    initScrollReveal();
+    initParallax();
 });
