@@ -45,6 +45,29 @@ const PRIORITY_LABELS = {
     high: 'Yüksek'
 };
 
+// ===== Theme Management =====
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    } else if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Initialize theme immediately to prevent flash
+initTheme();
+
 // ===== State Management =====
 const AppState = {
     currentUser: null,
@@ -1928,6 +1951,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profileLogoutBtn) {
         profileLogoutBtn.addEventListener('click', () => logout());
     }
+
+    // Theme Toggle
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+        btn.addEventListener('click', toggleTheme);
+    });
 
     // Navigation
     document.querySelectorAll('#admin-dashboard .nav-link[data-section]').forEach(link => {
