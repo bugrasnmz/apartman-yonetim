@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=4.8">
+    <link rel="stylesheet" href="css/style.css?v=5.0">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- EmailJS SDK -->
@@ -111,39 +111,67 @@
                 </button>
                 <div class="nav-links" id="nav-links">
                     <a href="#" class="nav-link active" data-section="overview">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                            </svg></span>
                         <span>Genel Bakış</span>
                     </a>
                     <a href="#" class="nav-link" data-section="finance">
-                        <span class="nav-icon">💵</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                            </svg></span>
                         <span>Gelir/Gider</span>
                     </a>
                     <a href="#" class="nav-link" data-section="electricity">
-                        <span class="nav-icon">⚡</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                            </svg></span>
                         <span>Faturalar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="dues">
-                        <span class="nav-icon">💰</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 6v6l4 2" />
+                            </svg></span>
                         <span>Aidatlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="maintenance">
-                        <span class="nav-icon">🔧</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path
+                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                            </svg></span>
                         <span>Bakımlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="tasks">
-                        <span class="nav-icon">📋</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M9 11l3 3L22 4" />
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                            </svg></span>
                         <span>İş Takibi</span>
                     </a>
                     <a href="#" class="nav-link" data-section="decisions">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg></span>
                         <span>Kararlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="apartments">
-                        <span class="nav-icon">🏘️</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg></span>
                         <span>Daireler</span>
                     </a>
                     <a href="#" class="nav-link logout-link" id="admin-logout">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg></span>
                         <span>Çıkış</span>
                     </a>
                 </div>
@@ -535,23 +563,37 @@
                     </div>
                     <div class="nav-divider"></div>
                     <a href="#" class="nav-link active" data-section="resident-overview">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                            </svg></span>
                         <span>Dashboard</span>
                     </a>
                     <a href="#" class="nav-link" data-section="resident-bills">
-                        <span class="nav-icon">⚡</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                            </svg></span>
                         <span>Faturalar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="resident-decisions">
-                        <span class="nav-icon">📋</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M9 11l3 3L22 4" />
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                            </svg></span>
                         <span>Kararlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="resident-profile">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg></span>
                         <span>Profilim</span>
                     </a>
                     <a href="#" class="nav-link logout-link" id="resident-logout">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg></span>
                         <span>Çıkış</span>
                     </a>
                 </div>
@@ -786,19 +828,30 @@
             <!-- Mobile Bottom Tab Bar -->
             <nav class="mobile-tab-bar" id="resident-tab-bar">
                 <button class="tab-item active" data-section="resident-overview">
-                    <span class="tab-icon">📊</span>
+                    <span class="tab-icon"><svg viewBox="0 0 24 24">
+                            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                        </svg></span>
                     <span class="tab-label">Ana</span>
                 </button>
                 <button class="tab-item" data-section="resident-bills">
-                    <span class="tab-icon">⚡</span>
+                    <span class="tab-icon"><svg viewBox="0 0 24 24">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg></span>
                     <span class="tab-label">Faturalar</span>
                 </button>
                 <button class="tab-item" data-section="resident-profile">
-                    <span class="tab-icon">👤</span>
+                    <span class="tab-icon"><svg viewBox="0 0 24 24">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg></span>
                     <span class="tab-label">Profil</span>
                 </button>
                 <button class="tab-item" id="tab-menu-toggle">
-                    <span class="tab-icon">☰</span>
+                    <span class="tab-icon"><svg viewBox="0 0 24 24">
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg></span>
                     <span class="tab-label">Menü</span>
                 </button>
             </nav>

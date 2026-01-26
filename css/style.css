@@ -30,10 +30,12 @@
     --info: #3B82F6;
     --info-bg: rgba(59, 130, 246, 0.1);
 
-    /* Text Colors */
+    /* Text Colors - WCAG AA Contrast Optimized */
     --text-primary: #11142D;
-    --text-secondary: #808191;
-    --text-muted: #A0A3BD;
+    --text-secondary: #475569;
+    /* Updated: 4.5:1+ contrast */
+    --text-muted: #64748B;
+    /* Was: #A0A3BD */
     --text-light: #FFFFFF;
 
     /* Borders & Shadows */
@@ -50,9 +52,14 @@
     --sidebar-width: 280px;
     --header-height: 80px;
 
-    /* Transitions */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.25s ease;
+    /* Transitions - Standardized */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 400ms ease;
+
+    /* Focus Ring */
+    --focus-ring-color: rgba(108, 93, 211, 0.5);
+    --focus-ring-offset: 2px;
 }
 
 /* ===== Reset & Base ===== */
@@ -62,6 +69,26 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+/* ===== Focus States - Accessibility ===== */
+*:focus {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: var(--focus-ring-offset);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: var(--focus-ring-offset);
+    box-shadow: 0 0 0 4px var(--focus-ring-color);
 }
 
 html {
@@ -2400,7 +2427,20 @@ tbody tr:hover {
 
 .mobile-tab-bar .tab-icon {
     font-size: 22px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.3s ease;
+}
+
+.mobile-tab-bar .tab-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
 }
 
 .mobile-tab-bar .tab-label {
@@ -2909,4 +2949,81 @@ tbody tr:hover {
         box-shadow: none;
         border: 1px solid #ddd;
     }
+}
+
+/* ===== Interactive Elements - Cursor & Hover ===== */
+.card:hover,
+.stat-card:hover,
+.glass-card:hover,
+.nav-link:hover,
+.tab-item:hover,
+.tab-btn:hover,
+[role="button"]:hover,
+[data-clickable]:hover {
+    cursor: pointer;
+}
+
+/* Cards should have subtle lift on hover */
+.card:hover,
+.stat-card:hover,
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+/* Touch target minimum size */
+.icon-btn,
+.mobile-tab-bar button,
+.tab-item {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* ===== SVG Icon Utilities ===== */
+.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-lg {
+    width: 32px;
+    height: 32px;
+}
+
+.icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Nav icons - replace emoji with SVG friendly styles */
+.nav-icon {
+    font-size: 20px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
 }
