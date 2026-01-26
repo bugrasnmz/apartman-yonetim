@@ -365,8 +365,8 @@ function refreshSection(sectionId) {
 // ===== Authentication =====
 // ===== Authentication =====
 async function loginAdmin(password) {
-    // Hardcoded email for admin convenience
-    const email = "admin@apartman.com";
+    // Admin email - Firebase Authentication
+    const email = "dogaaptyonetim@gmail.com";
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
