@@ -282,44 +282,10 @@ body::before {
     z-index: 9999;
 }
 
-/* ===== Custom Cursor ===== */
-.cursor-dot {
-    position: fixed;
-    width: 8px;
-    height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99999;
-    transform: translate(-50%, -50%);
-    transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease;
-    mix-blend-mode: difference;
-}
-
+/* ===== Custom Cursor (Disabled) ===== */
+.cursor-dot,
 .cursor-outline {
-    position: fixed;
-    width: 40px;
-    height: 40px;
-    border: 2px solid var(--primary);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99998;
-    transform: translate(-50%, -50%);
-    transition: all 0.15s ease-out;
-    opacity: 0.6;
-}
-
-.cursor-dot.hover {
-    width: 16px;
-    height: 16px;
-    background: var(--primary);
-}
-
-.cursor-outline.hover {
-    width: 60px;
-    height: 60px;
-    border-color: var(--accent);
-    opacity: 0.3;
+    display: none;
 }
 
 /* ===== Ambient Floating Particles ===== */
@@ -667,6 +633,8 @@ body::before {
     margin-left: var(--sidebar-width);
     padding: 20px 24px;
     min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
     background: var(--bg-main);
 }
 
