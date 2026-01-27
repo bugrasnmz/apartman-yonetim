@@ -217,6 +217,7 @@ textarea:focus-visible {
 
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 body {
@@ -228,6 +229,7 @@ body {
     -webkit-font-smoothing: antialiased;
     position: relative;
     cursor: default;
+    overflow-x: hidden;
 }
 
 /* Subtle noise texture overlay */
@@ -645,6 +647,7 @@ body::before {
     font-size: 28px;
     font-weight: 700;
     color: var(--text-primary);
+    text-wrap: balance;
 }
 
 .header-actions {
@@ -836,6 +839,7 @@ body::before {
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
+    text-wrap: balance;
 }
 
 /* ===== Content Grid (for section layouts) ===== */
@@ -1025,6 +1029,7 @@ body::before {
     text-align: left;
     border-bottom: 1px solid var(--border-color);
     font-size: 14px;
+    font-variant-numeric: tabular-nums;
 }
 
 .data-table th {
@@ -2860,11 +2865,16 @@ tbody tr:hover {
 
 /* ===== Responsive Design ===== */
 @media (max-width: 1024px) {
-    .sidebar {
+
+    .sidebar,
+    .navbar,
+    .glass-nav {
         transform: translateX(-100%);
     }
 
-    .sidebar.active {
+    .sidebar.active,
+    .navbar.active,
+    .glass-nav.active {
         transform: translateX(0);
     }
 
