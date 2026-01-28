@@ -2303,19 +2303,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Update password
-            aptData.password = newPassword;
-
-            if (aptData.id) {
-                const index = AppState.apartments.findIndex(a => a.id === aptData.id);
-                AppState.apartments[index] = aptData;
-                await FirebaseService.save(COLLECTIONS.APARTMENTS, aptData.id, aptData);
+            // Check if apartment has an id (required for Firebase save)
+            if (!aptData.id) {
+                showToast('Daire bilgisi bulunamadı. Yöneticinize başvurun.', 'error');
+                return;
             }
 
-            showToast('Şifreniz başarıyla değiştirildi!', 'success');
+            try {
+                // Create updated apartment data with new password
+                const updatedAptData = { ...aptData, password: newPassword };
 
-            // Clear form
-            passwordChangeForm.reset();
+                // Update local state
+                const index = AppState.apartments.findIndex(a => a.id === aptData.id);
+                if (index !== -1) {
+                    AppState.apartments[index] = updatedAptData;
+                }
+
+                // Save to Firebase
+                await FirebaseService.save(COLLECTIONS.APARTMENTS, aptData.id, updatedAptData);
+
+                showToast('Şifreniz başarıyla değiştirildi!', 'success');
+
+                // Clear form
+                passwordChangeForm.reset();
+            } catch (error) {
+                console.error('Password change error:', error);
+                showToast('Şifre değiştirme başarısız. Lütfen tekrar deneyin.', 'error');
+            }
         });
     }
 
