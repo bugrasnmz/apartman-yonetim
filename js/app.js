@@ -1823,21 +1823,97 @@ function initExpensePieChart() {
     });
 }
 
-// ===== Modal Management =====
+// ===== Accessible Modal Management =====
+let lastFocusedElement = null;
+
 function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // Store last focused element for restoration
+    lastFocusedElement = document.activeElement;
+
+    // Add ARIA attributes
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+
+    // Find title element for aria-labelledby
+    const titleEl = modal.querySelector('.modal-header h3');
+    if (titleEl && titleEl.id) {
+        modal.setAttribute('aria-labelledby', titleEl.id);
+    }
+
+    // Show modal
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Focus first focusable element
+    requestAnimationFrame(() => {
+        const firstFocusable = modal.querySelector(
+            'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (firstFocusable) firstFocusable.focus();
+    });
+
+    // Setup keyboard trap
+    setupModalKeyboardTrap(modal);
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    modal.classList.remove('active');
     document.body.style.overflow = '';
-    const form = document.querySelector(`#${modalId} form`);
+
+    // Remove ARIA on close
+    modal.removeAttribute('aria-modal');
+
+    // Reset form if exists
+    const form = modal.querySelector('form');
     if (form) form.reset();
+
+    // Clear any validation errors
+    modal.querySelectorAll('.field-error').forEach(el => el.remove());
+    modal.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+
+    // Restore focus to previously focused element
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+        lastFocusedElement = null;
+    }
 }
 
 function closeAllModals() {
     document.querySelectorAll('.modal.active').forEach(m => closeModal(m.id));
+}
+
+function setupModalKeyboardTrap(modal) {
+    const focusableElements = modal.querySelectorAll(
+        'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableElements[0];
+    const lastEl = focusableElements[focusableElements.length - 1];
+
+    function handleTabKey(e) {
+        if (e.key === 'Tab') {
+            if (e.shiftKey && document.activeElement === firstEl) {
+                e.preventDefault();
+                lastEl.focus();
+            } else if (!e.shiftKey && document.activeElement === lastEl) {
+                e.preventDefault();
+                firstEl.focus();
+            }
+        }
+        if (e.key === 'Escape') {
+            closeModal(modal.id);
+        }
+    }
+
+    // Remove old handler if exists
+    modal._keyHandler && modal.removeEventListener('keydown', modal._keyHandler);
+    modal._keyHandler = handleTabKey;
+    modal.addEventListener('keydown', handleTabKey);
 }
 
 // ===== EmailJS Configuration =====
