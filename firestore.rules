@@ -41,5 +41,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null;
     }
+    
+    // Audit Logs - append only, read requires auth
+    match /audit_logs/{logId} {
+      allow read: if request.auth != null;  // Only admin can read logs
+      allow create: if true;                 // Anyone can create logs
+      allow update, delete: if false;        // Logs cannot be modified or deleted
+    }
   }
 }
