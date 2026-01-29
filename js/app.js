@@ -179,7 +179,7 @@ const FirebaseService = {
             await setDoc(doc(db, colName, id), data, { merge: true });
         } catch (e) {
             console.error(`Error saving to ${colName}:`, e);
-            showToast('Kaydetme hatası!', 'error');
+            showToast('Kaydetme hatası! Lütfen internet bağlantınızı kontrol edip tekrar deneyin.', 'error');
         }
     },
 
@@ -204,7 +204,7 @@ const FirebaseService = {
             await deleteDoc(doc(db, colName, id));
         } catch (e) {
             console.error(`Error deleting from ${colName}:`, e);
-            showToast('Silme hatası!', 'error');
+            showToast('Silme hatası! Lütfen sayfayı yenileyip tekrar deneyin.', 'error');
         }
     }
 };
@@ -297,7 +297,7 @@ async function initializeData() {
 
     } catch (error) {
         console.error("Init Error:", error);
-        showToast('Veri yükleme hatası: ' + error.message, 'error');
+        showToast('Veri yükleme hatası. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.', 'error');
     }
 }
 
@@ -402,7 +402,7 @@ async function loginAdmin(password) {
         return true;
     } catch (error) {
         console.error("Login error:", error);
-        showToast('Giriş başarısız! Parolayı kontrol edin.', 'error');
+        showToast('Giriş başarısız! Lütfen e-posta ve parolanızı kontrol edin.', 'error');
         return false;
     }
 }
@@ -1910,15 +1910,101 @@ async function sendPasswordEmail(apartmentNumber) {
     }
 }
 
-// ===== Toast =====
-function showToast(message, type = 'info') {
+// ===== Enhanced Toast System =====
+function showToast(message, type = 'info', options = {}) {
     const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const {
+        duration = type === 'error' ? 5000 : 3000, // Errors stay longer
+        dismissible = true,
+        action = null, // { label: 'Undo', callback: () => {} }
+    } = options;
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-    toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-message">${message}</span>`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️',
+        loading: '⏳'
+    };
+
+    // Enhanced message for errors - add helpful hint
+    let displayMessage = message;
+    if (type === 'error' && !message.includes('Lütfen')) {
+        // Already has guidance, keep as is
+    }
+
+    let html = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-message">${displayMessage}</span>
+    `;
+
+    // Add action button if provided
+    if (action && action.label) {
+        html += `<button class="toast-action" type="button">${action.label}</button>`;
+    }
+
+    // Add close button if dismissible
+    if (dismissible) {
+        html += `<button class="toast-close" type="button" aria-label="Kapat">×</button>`;
+    }
+
+    toast.innerHTML = html;
+
+    // Action button click handler
+    if (action && action.callback) {
+        const actionBtn = toast.querySelector('.toast-action');
+        if (actionBtn) {
+            actionBtn.addEventListener('click', () => {
+                action.callback();
+                removeToast(toast);
+            });
+        }
+    }
+
+    // Close button click handler
+    if (dismissible) {
+        const closeBtn = toast.querySelector('.toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => removeToast(toast));
+        }
+    }
+
     container.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'fadeIn 0.3s ease reverse'; setTimeout(() => toast.remove(), 300); }, 3000);
+
+    // Auto-dismiss
+    if (duration > 0) {
+        setTimeout(() => removeToast(toast), duration);
+    }
+
+    return toast;
+}
+
+function removeToast(toast) {
+    if (!toast || !toast.parentNode) return;
+    toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+    setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+    }, 300);
+}
+
+// Convenience functions
+function showSuccessToast(message, options) {
+    return showToast(message, 'success', options);
+}
+
+function showErrorToast(message, options) {
+    return showToast(message, 'error', { duration: 5000, ...options });
+}
+
+function showLoadingToast(message) {
+    return showToast(message, 'loading', { duration: 0, dismissible: false });
 }
 
 // ===== Utilities =====

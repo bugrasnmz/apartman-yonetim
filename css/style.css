@@ -2534,6 +2534,7 @@ tbody tr:hover {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-width: 420px;
 }
 
 .toast {
@@ -2541,14 +2542,15 @@ tbody tr:hover {
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
-    background: var(--bg-card);
+    background: var(--bg-card-solid);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    animation: slideIn 0.3s ease;
+    animation: toastSlideIn 0.3s ease;
     min-width: 280px;
+    max-width: 100%;
 }
 
-@keyframes slideIn {
+@keyframes toastSlideIn {
     from {
         opacity: 0;
         transform: translateX(100%);
@@ -2560,13 +2562,61 @@ tbody tr:hover {
     }
 }
 
+@keyframes toastSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
 .toast-icon {
     font-size: 20px;
+    flex-shrink: 0;
 }
 
 .toast-message {
+    flex: 1;
     font-size: 14px;
     font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.toast-action {
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.toast-action:hover {
+    background: var(--primary-bg);
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0;
+    margin-left: 8px;
+    transition: color var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
     color: var(--text-primary);
 }
 
@@ -2574,16 +2624,41 @@ tbody tr:hover {
     border-left: 4px solid var(--success);
 }
 
+.toast.success .toast-action {
+    color: var(--success);
+}
+
 .toast.error {
     border-left: 4px solid var(--danger);
+    background: var(--danger-bg);
+}
+
+.toast.error .toast-action {
+    color: var(--danger);
 }
 
 .toast.warning {
     border-left: 4px solid var(--warning);
 }
 
+.toast.warning .toast-action {
+    color: var(--warning);
+}
+
 .toast.info {
     border-left: 4px solid var(--info);
+}
+
+.toast.info .toast-action {
+    color: var(--info);
+}
+
+.toast.loading {
+    border-left: 4px solid var(--primary);
+}
+
+.toast.loading .toast-icon {
+    animation: spin 1s linear infinite;
 }
 
 /* ===== Empty State ===== */
