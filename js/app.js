@@ -1,8 +1,9 @@
 /* =========================================
    Apartman Yönetim Sistemi - JavaScript
-   Phase 3: Firebase Integration
+   Phase 4: Modular Architecture
    ========================================= */
 
+// Firebase imports
 import {
     db, auth, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
     signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS, APP_CONFIG
@@ -10,40 +11,10 @@ import {
 
 window.db = db; // Debug purposes
 
-
-// ===== Constants =====
-const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
-    'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 // NOTE: Admin authentication is handled by Firebase Auth - no hardcoded passwords
+// NOTE: Module files exist in js/modules/ for future gradual migration:
+//       - config.js, state.js, utils.js, ui.js, firebase-service.js
 const TOTAL_APARTMENTS = APP_CONFIG.TOTAL_APARTMENTS;
-
-const CATEGORY_LABELS = {
-    aidat: 'Aidat',
-    kira: 'Kira Geliri',
-    diger_gelir: 'Diğer Gelir',
-    elektrik: 'Elektrik',
-    su: 'Su',
-    dogalgaz: 'Doğalgaz',
-    temizlik: 'Temizlik',
-    bakim: 'Bakım/Onarım',
-    guvenlik: 'Güvenlik',
-    sigorta: 'Sigorta',
-    diger_gider: 'Diğer Gider'
-};
-
-const STATUS_LABELS = {
-    pending: 'Bekliyor',
-    in_progress: 'Devam Ediyor',
-    completed: 'Tamamlandı'
-};
-
-const PRIORITY_LABELS = {
-    low: 'Düşük',
-    medium: 'Orta',
-    high: 'Yüksek'
-};
 
 // ===== Theme Management =====
 function initTheme() {
