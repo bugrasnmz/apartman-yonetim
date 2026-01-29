@@ -5,7 +5,7 @@
 
 import {
     db, auth, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
-    signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS
+    signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS, APP_CONFIG
 } from './firebase-config.js';
 
 window.db = db; // Debug purposes
@@ -16,8 +16,8 @@ const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
     'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
     'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-const ADMIN_PASSWORD = 'Eb27092024';
-const TOTAL_APARTMENTS = 12;
+// NOTE: Admin authentication is handled by Firebase Auth - no hardcoded passwords
+const TOTAL_APARTMENTS = APP_CONFIG.TOTAL_APARTMENTS;
 
 const CATEGORY_LABELS = {
     aidat: 'Aidat',
@@ -414,10 +414,9 @@ function refreshSection(sectionId) {
 }
 
 // ===== Authentication =====
-// ===== Authentication =====
 async function loginAdmin(password) {
-    // Admin email - Firebase Authentication
-    const email = "dogaaptyonetim@gmail.com";
+    // Admin email from centralized config
+    const email = APP_CONFIG.ADMIN_EMAIL;
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -440,7 +439,8 @@ async function loginAdmin(password) {
 function loginResident(apartmentNumber) {
     if (apartmentNumber >= 1 && apartmentNumber <= TOTAL_APARTMENTS) {
         AppState.currentUser = { role: 'resident', apartment: apartmentNumber };
-        localStorage.setItem('localResident', JSON.stringify(AppState.currentUser));
+        // Use sessionStorage for security - data cleared when browser tab closes
+        sessionStorage.setItem(APP_CONFIG.SESSION_STORAGE_KEY, JSON.stringify(AppState.currentUser));
         document.getElementById('resident-apartment-badge').textContent = `Daire ${apartmentNumber}`;
         document.getElementById('resident-welcome-text').textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
         showPage('resident-dashboard');
@@ -455,7 +455,7 @@ function loginResident(apartmentNumber) {
 async function logout() {
     try {
         await signOut(auth);
-        localStorage.removeItem('localResident');
+        sessionStorage.removeItem(APP_CONFIG.SESSION_STORAGE_KEY);
         AppState.currentUser = null;
         destroyAllCharts();
         showPage('login-page');
@@ -481,9 +481,9 @@ function checkAuth() {
         // We can check if we have a resident set manually if we want persistence
         // For now, simpler to require re-selection for residents on refresh or use local storage for resident ID.
         else {
-            const localResident = localStorage.getItem('localResident');
-            if (localResident) {
-                const residentData = JSON.parse(localResident);
+            const savedResident = sessionStorage.getItem(APP_CONFIG.SESSION_STORAGE_KEY);
+            if (savedResident) {
+                const residentData = JSON.parse(savedResident);
                 loginResident(residentData.apartment);
             }
         }

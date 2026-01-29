@@ -28,9 +28,18 @@ const COLLECTIONS = {
     SETTINGS: 'settings'
 };
 
+// App Configuration
+// NOTE: In production, consider using environment variables via a build tool
+const APP_CONFIG = {
+    ADMIN_EMAIL: 'dogaaptyonetim@gmail.com',
+    TOTAL_APARTMENTS: 12,
+    SESSION_STORAGE_KEY: 'apt_resident_session'
+};
+
 export {
     app, db, auth,
     collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
-    COLLECTIONS
+    COLLECTIONS,
+    APP_CONFIG
 };

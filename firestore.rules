@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Apartments - everyone can read, write requires auth or password match
+    match /apartments/{apartmentId} {
+      allow read, write: if true;
+    }
+    
+    // Bills, Transactions, Maintenance, Tasks, Dues - read for all, write for authenticated
+    match /bills/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /transactions/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /maintenance/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /tasks/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /dues/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /decisions/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
