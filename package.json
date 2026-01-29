@@ -1,0 +1,27 @@
+{
+    "name": "apartman-yonetim-sistemi",
+    "version": "1.0.0",
+    "description": "Apartman Yönetim Sistemi - Kapsamlı Yönetim Uygulaması",
+    "main": "index.html",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "keywords": [
+        "apartman",
+        "yonetim",
+        "site"
+    ],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "devDependencies": {
+        "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "firebase": "^10.7.1",
+        "chart.js": "^4.4.1",
+        "@emailjs/browser": "^4.0.0"
+    }
+}

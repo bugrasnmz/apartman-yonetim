@@ -16,3 +16,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Dependencies
+node_modules/
+
+# Build Output
+dist/
+.env
+.DS_Store

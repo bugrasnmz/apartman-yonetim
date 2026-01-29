@@ -9,6 +9,10 @@ import {
     signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS, APP_CONFIG
 } from './firebase-config.js';
 
+// Third-party imports
+import Chart from 'chart.js/auto';
+import emailjs from '@emailjs/browser';
+
 window.db = db; // Debug purposes
 
 // NOTE: Admin authentication is handled by Firebase Auth - no hardcoded passwords
@@ -1925,9 +1929,13 @@ const EMAILJS_CONFIG = {
 
 // Initialize EmailJS (call after page load)
 function initEmailJS() {
-    if (typeof emailjs !== 'undefined' && EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
-        emailjs.init(EMAILJS_CONFIG.publicKey);
-        console.log('EmailJS initialized');
+    if (EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
+        try {
+            emailjs.init(EMAILJS_CONFIG.publicKey);
+            console.log('EmailJS initialized');
+        } catch (error) {
+            console.error('EmailJS init error:', error);
+        }
     }
 }
 

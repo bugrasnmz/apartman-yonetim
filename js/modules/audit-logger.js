@@ -52,7 +52,7 @@ export async function logAudit(action, category, level = LOG_LEVELS.INFO, detail
         await addDoc(collection(db, AUDIT_COLLECTION), logEntry);
 
         // Console'a da yaz (development için)
-        if (process.env?.NODE_ENV !== 'production') {
+        if (import.meta.env?.MODE !== 'production') {
             console.log(`[AUDIT] ${level.toUpperCase()} - ${category}/${action}`, details);
         }
 
