@@ -12,8 +12,8 @@ let lazyLoadObserver = null;
 export function initLazyLoading() {
     if (!('IntersectionObserver' in window)) {
         // Fallback for older browsers: load everything immediately
-        document.querySelectorAll('[data-src]').forEach(el => {
-            el.src = el.dataset.src;
+        document.querySelectorAll('[data-src]').forEach((el) => {
+            (el as HTMLImageElement).src = (el as HTMLElement).dataset.src || '';
         });
         return;
     }
@@ -22,7 +22,7 @@ export function initLazyLoading() {
         (entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    loadElement(entry.target);
+                    loadElement(entry.target as HTMLElement);
                     lazyLoadObserver.unobserve(entry.target);
                 }
             });
@@ -42,13 +42,13 @@ export function initLazyLoading() {
 /**
  * Load a lazy element
  */
-function loadElement(el) {
+function loadElement(el: HTMLElement) {
     if (el.dataset.src) {
-        el.src = el.dataset.src;
+        (el as HTMLImageElement).src = el.dataset.src;
         el.removeAttribute('data-src');
     }
     if (el.dataset.srcset) {
-        el.srcset = el.dataset.srcset;
+        (el as HTMLImageElement).srcset = el.dataset.srcset;
         el.removeAttribute('data-srcset');
     }
     el.classList.add('loaded');
@@ -67,7 +67,7 @@ export function loadScript(src) {
         return Promise.resolve();
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
         script.src = src;
         script.async = true;
@@ -139,7 +139,8 @@ export function preloadResource(href, as = 'script') {
  * Check if user has slow connection
  */
 export function isSlowConnection() {
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const nav = navigator as any;
+    const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
     if (conn) {
         // Save-Data header or 2G/slow-2G connection
         return conn.saveData || ['slow-2g', '2g'].includes(conn.effectiveType);

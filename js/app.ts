@@ -6,14 +6,51 @@
 // Firebase imports
 import {
     db, auth, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
-    signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS, APP_CONFIG
+    signInWithEmailAndPassword, signOut, onAuthStateChanged, COLLECTIONS, APP_CONFIG,
+    MONTHS, MONTHS_SHORT, CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS
 } from './firebase-config.js';
+
+import { AppState } from './modules/state.js';
 
 // Third-party imports
 import Chart from 'chart.js/auto';
 import emailjs from '@emailjs/browser';
 
-window.db = db; // Debug purposes
+interface Window {
+    db: any;
+    loginAdmin: any;
+    loginResident: any;
+    logout: any;
+    showSection: any;
+    editTransaction: any;
+    deleteTransaction: any;
+    editBill: any;
+    viewBill: any;
+    deleteBill: any;
+    toggleDue: any;
+    editDecision: any;
+    deleteDecision: any;
+    viewDecisionDetail: any;
+    editMaintenance: any;
+    deleteMaintenance: any;
+    editTask: any;
+    deleteTask: any;
+    viewTaskDetail: any;
+    editApartment: any;
+    renderBills: any;
+    renderDuesTable: any;
+    updateMonthlyDueAmount: any;
+    renderTransactions: any;
+    updateFinanceSummary: any;
+    renderMaintenance: any;
+    renderDecisions: any;
+    renderRecentDecisions: any;
+    renderTasks: any;
+    closeAllModals: any;
+    migrateData: any;
+}
+
+(window as any).db = db; // Debug purposes
 
 // NOTE: Admin authentication is handled by Firebase Auth - no hardcoded passwords
 // NOTE: Module files exist in js/modules/ for future gradual migration:
@@ -57,16 +94,16 @@ function initCustomCursor() {
     document.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
-        dot.style.left = mouseX + 'px';
-        dot.style.top = mouseY + 'px';
+        (dot as HTMLElement).style.left = mouseX + 'px';
+        (dot as HTMLElement).style.top = mouseY + 'px';
     });
 
     // Smooth outline following
     function animateOutline() {
         outlineX += (mouseX - outlineX) * 0.15;
         outlineY += (mouseY - outlineY) * 0.15;
-        outline.style.left = outlineX + 'px';
-        outline.style.top = outlineY + 'px';
+        (outline as HTMLElement).style.left = outlineX + 'px';
+        (outline as HTMLElement).style.top = outlineY + 'px';
         requestAnimationFrame(animateOutline);
     }
     animateOutline();
@@ -86,8 +123,8 @@ function initCustomCursor() {
 
     // Hide cursor on mobile
     if ('ontouchstart' in window) {
-        dot.style.display = 'none';
-        outline.style.display = 'none';
+        (dot as HTMLElement).style.display = 'none';
+        (outline as HTMLElement).style.display = 'none';
     }
 }
 
@@ -142,26 +179,7 @@ function hideSkeleton(containerId) {
 }
 
 // ===== State Management =====
-const AppState = {
-    currentUser: null,
-    currentPage: 'login-page',
-    currentSection: 'overview',
-    currentYear: new Date().getFullYear(),
-    currentTaskFilter: 'all',
-
-    // Data
-    bills: [],
-    dues: {},
-    decisions: [],
-    transactions: [],
-    maintenance: [],
-    tasks: [],
-    apartments: [], // New Collection
-    settings: { monthlyDueAmount: 500 },
-
-    // Charts
-    charts: {}
-};
+// AppState is imported from ./modules/state.js
 
 // ===== Firebase Data Service =====
 // Replacing Local Storage with Firestore
@@ -269,7 +287,7 @@ async function initializeData() {
 
         // Initialize settings if not exists
         if (settingsDoc.exists()) {
-            AppState.settings = settingsDoc.data();
+            AppState.settings = settingsDoc.data() as any;
         } else {
             // Save default settings to Firebase
             AppState.settings = { monthlyDueAmount: 500 };
@@ -365,7 +383,7 @@ function showSection(sectionId) {
 
     container.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active');
-        if (link.dataset.section === sectionId) link.classList.add('active');
+        if ((link as HTMLElement).dataset.section === sectionId) link.classList.add('active');
     });
 
     AppState.currentSection = sectionId;
@@ -481,17 +499,17 @@ function updateOverviewStats() {
 
     const balance = calculateBalance();
 
-    document.getElementById('total-apartments').textContent = TOTAL_APARTMENTS;
-    document.getElementById('paid-dues').textContent = paidCount;
-    document.getElementById('unpaid-dues').textContent = unpaidCount;
+    document.getElementById('total-apartments').textContent = TOTAL_APARTMENTS.toString();
+    document.getElementById('paid-dues').textContent = paidCount.toString();
+    document.getElementById('unpaid-dues').textContent = unpaidCount.toString();
     document.getElementById('total-balance').textContent = `₺${formatNumber(balance)}`;
 }
 
 function renderUpcomingMaintenance() {
     const container = document.getElementById('upcoming-maintenance');
     const upcoming = AppState.maintenance
-        .filter(m => m.status === 'pending' && new Date(m.date) >= new Date())
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .filter(m => m.status === 'pending' && new Date(m.date).getTime() >= new Date().getTime())
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 3);
 
     if (upcoming.length === 0) {
@@ -566,15 +584,15 @@ function updateFinanceSummary() {
 
 function renderTransactions() {
     const container = document.getElementById('transactions-list');
-    const typeFilter = document.getElementById('transaction-type-filter').value;
-    const yearFilter = parseInt(document.getElementById('transaction-year-filter').value);
+    const typeFilter = (document.getElementById('transaction-type-filter') as HTMLSelectElement).value;
+    const yearFilter = parseInt((document.getElementById('transaction-year-filter') as HTMLSelectElement).value);
 
     let filtered = AppState.transactions.filter(t => {
         const d = new Date(t.date);
         if (d.getFullYear() !== yearFilter) return false;
         if (typeFilter !== 'all' && t.type !== typeFilter) return false;
         return true;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     if (filtered.length === 0) {
         container.innerHTML = '<p class="empty-state">Bu kriterlere uygun kayıt bulunamadı</p>';
@@ -650,12 +668,12 @@ function editTransaction(id) {
     const t = AppState.transactions.find(x => x.id === id);
     if (!t) return;
     document.getElementById('transaction-modal-title').textContent = 'Kayıt Düzenle';
-    document.getElementById('transaction-id').value = t.id;
-    document.getElementById('transaction-type').value = t.type;
-    document.getElementById('transaction-category').value = t.category;
-    document.getElementById('transaction-amount').value = t.amount;
-    document.getElementById('transaction-date').value = t.date;
-    document.getElementById('transaction-description').value = t.description || '';
+    (document.getElementById('transaction-id') as HTMLInputElement).value = t.id;
+    (document.getElementById('transaction-type') as HTMLSelectElement).value = t.type;
+    (document.getElementById('transaction-category') as HTMLSelectElement).value = t.category;
+    (document.getElementById('transaction-amount') as HTMLInputElement).value = t.amount.toString();
+    (document.getElementById('transaction-date') as HTMLInputElement).value = t.date;
+    (document.getElementById('transaction-description') as HTMLTextAreaElement).value = t.description || '';
     openModal('transaction-modal');
 }
 
@@ -667,7 +685,7 @@ function renderMaintenance() {
         return;
     }
 
-    const sorted = [...AppState.maintenance].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...AppState.maintenance].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     container.innerHTML = sorted.map(m => `
         <div class="maintenance-card">
             <div class="maintenance-icon">${m.status === 'completed' ? '✅' : '🔧'}</div>
@@ -717,11 +735,11 @@ function editMaintenance(id) {
     const m = AppState.maintenance.find(x => x.id === id);
     if (!m) return;
     document.getElementById('maintenance-modal-title').textContent = 'Bakım Düzenle';
-    document.getElementById('maintenance-id').value = m.id;
-    document.getElementById('maintenance-title').value = m.title;
-    document.getElementById('maintenance-date').value = m.date;
-    document.getElementById('maintenance-description').value = m.description || '';
-    document.getElementById('maintenance-status').value = m.status;
+    (document.getElementById('maintenance-id') as HTMLInputElement).value = m.id;
+    (document.getElementById('maintenance-title') as HTMLInputElement).value = m.title;
+    (document.getElementById('maintenance-date') as HTMLInputElement).value = m.date;
+    (document.getElementById('maintenance-description') as HTMLTextAreaElement).value = m.description || '';
+    (document.getElementById('maintenance-status') as HTMLSelectElement).value = m.status;
     openModal('maintenance-modal');
 }
 
@@ -797,12 +815,12 @@ function editTask(id) {
     const t = AppState.tasks.find(x => x.id === id);
     if (!t) return;
     document.getElementById('task-modal-title').textContent = 'İş Düzenle';
-    document.getElementById('task-id').value = t.id;
-    document.getElementById('task-title').value = t.title;
-    document.getElementById('task-description').value = t.description;
-    document.getElementById('task-detail').value = t.detail || '';
-    document.getElementById('task-status').value = t.status;
-    document.getElementById('task-priority').value = t.priority;
+    (document.getElementById('task-id') as HTMLInputElement).value = t.id;
+    (document.getElementById('task-title') as HTMLInputElement).value = t.title;
+    (document.getElementById('task-description') as HTMLTextAreaElement).value = t.description;
+    (document.getElementById('task-detail') as HTMLTextAreaElement).value = t.detail || '';
+    (document.getElementById('task-status') as HTMLSelectElement).value = t.status;
+    (document.getElementById('task-priority') as HTMLSelectElement).value = t.priority;
     openModal('task-modal');
 }
 
@@ -836,7 +854,7 @@ function viewTaskDetail(id) {
 // ===== Bills Management =====
 function renderBills() {
     const container = document.getElementById('bills-list');
-    const yearFilter = document.getElementById('bill-year-filter').value;
+    const yearFilter = (document.getElementById('bill-year-filter') as HTMLSelectElement).value;
     const filtered = AppState.bills.filter(b => b.year == yearFilter).sort((a, b) => b.month - a.month);
 
     if (filtered.length === 0) {
@@ -932,12 +950,12 @@ function editBill(id) {
     const bill = AppState.bills.find(b => b.id === id);
     if (!bill) return;
     document.getElementById('bill-modal-title').textContent = 'Fatura Düzenle';
-    document.getElementById('bill-id').value = bill.id;
-    document.getElementById('bill-type').value = bill.type || 'elektrik';
-    document.getElementById('bill-month').value = bill.month;
-    document.getElementById('bill-year').value = bill.year;
-    document.getElementById('bill-amount').value = bill.amount;
-    document.getElementById('bill-notes').value = bill.notes || '';
+    (document.getElementById('bill-id') as HTMLInputElement).value = bill.id;
+    (document.getElementById('bill-type') as HTMLSelectElement).value = bill.type || 'elektrik';
+    (document.getElementById('bill-month') as HTMLSelectElement).value = bill.month.toString();
+    (document.getElementById('bill-year') as HTMLSelectElement).value = bill.year.toString();
+    (document.getElementById('bill-amount') as HTMLInputElement).value = bill.amount.toString();
+    (document.getElementById('bill-notes') as HTMLTextAreaElement).value = bill.notes || '';
     openModal('bill-modal');
 }
 
@@ -958,9 +976,9 @@ function viewBill(id) {
 // ===== Dues Management =====
 function renderDuesTable() {
     const tbody = document.getElementById('dues-table-body');
-    const year = document.getElementById('dues-year-select').value;
+    const year = (document.getElementById('dues-year-select') as HTMLSelectElement).value;
     const amount = AppState.settings.monthlyDueAmount;
-    document.getElementById('monthly-due-amount').value = amount;
+    (document.getElementById('monthly-due-amount') as HTMLInputElement).value = amount.toString();
 
     if (!AppState.dues[year]) {
         AppState.dues[year] = {};
@@ -1066,8 +1084,8 @@ async function syncAidatTransaction(year, month) {
     }
 }
 
-async function updateMonthlyDueAmount() {
-    AppState.settings.monthlyDueAmount = parseInt(document.getElementById('monthly-due-amount').value) || 0;
+const updateMonthlyDueAmount = async () => {
+    AppState.settings.monthlyDueAmount = parseInt((document.getElementById('monthly-due-amount') as HTMLInputElement).value) || 0;
 
     // Save directly to Firebase
     try {
@@ -1086,7 +1104,7 @@ function renderDecisions() {
         container.innerHTML = '<p class="empty-state">Henüz karar eklenmemiş</p>';
         return;
     }
-    const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     container.innerHTML = sorted.map(d => `
         <div class="transaction-card income">
             <div class="transaction-icon">📋</div>
@@ -1107,7 +1125,7 @@ function renderDecisions() {
 
 function renderRecentDecisions() {
     const container = document.getElementById('recent-decisions');
-    const recent = [...AppState.decisions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+    const recent = [...AppState.decisions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
     if (recent.length === 0) {
         container.innerHTML = '<p class="empty-state">Henüz karar eklenmemiş</p>';
         return;
@@ -1121,7 +1139,7 @@ function renderResidentDecisions() {
         container.innerHTML = '<p class="empty-state">Henüz karar eklenmemiş</p>';
         return;
     }
-    const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     container.innerHTML = sorted.map(d => `
         <div class="decision-card glass-card">
             <div class="decision-header">
@@ -1165,10 +1183,10 @@ function editDecision(id) {
     const d = AppState.decisions.find(x => x.id === id);
     if (!d) return;
     document.getElementById('decision-modal-title').textContent = 'Karar Düzenle';
-    document.getElementById('decision-id').value = d.id;
-    document.getElementById('decision-title').value = d.title;
-    document.getElementById('decision-date').value = d.date;
-    document.getElementById('decision-content').value = d.content;
+    (document.getElementById('decision-id') as HTMLInputElement).value = d.id;
+    (document.getElementById('decision-title') as HTMLInputElement).value = d.title;
+    (document.getElementById('decision-date') as HTMLInputElement).value = d.date;
+    (document.getElementById('decision-content') as HTMLTextAreaElement).value = d.content;
     openModal('decision-modal');
 }
 
@@ -1226,7 +1244,7 @@ function renderApartments() {
     // Update occupied apartments counter
     const occupiedEl = document.getElementById('occupied-apartments');
     if (occupiedEl) {
-        occupiedEl.textContent = occupiedCount;
+        occupiedEl.textContent = occupiedCount.toString();
     }
 }
 
@@ -1246,20 +1264,20 @@ function editApartment(id) {
     }
 
     document.getElementById('apartment-modal-title').textContent = `Daire ${apt.number} Düzenle`;
-    document.getElementById('apartment-id').value = apt.id || apt.number; // Store ID or Number if new
-    document.getElementById('apartment-resident').value = apt.residentName || '';
-    document.getElementById('apartment-status').value = apt.status || 'empty';
-    document.getElementById('apartment-owner').value = apt.ownerName || '';
-    document.getElementById('apartment-phone').value = apt.phone || '';
-    document.getElementById('apartment-count').value = apt.residentCount || 0;
-    document.getElementById('apartment-move-in').value = apt.moveInDate || '';
+    (document.getElementById('apartment-id') as HTMLInputElement).value = (apt.id || apt.number).toString(); // Store ID or Number if new
+    (document.getElementById('apartment-resident') as HTMLInputElement).value = apt.residentName || '';
+    (document.getElementById('apartment-status') as HTMLSelectElement).value = apt.status || 'empty';
+    (document.getElementById('apartment-owner') as HTMLInputElement).value = apt.ownerName || '';
+    (document.getElementById('apartment-phone') as HTMLInputElement).value = apt.phone || '';
+    (document.getElementById('apartment-count') as HTMLInputElement).value = (apt.residentCount || 0).toString();
+    (document.getElementById('apartment-move-in') as HTMLInputElement).value = apt.moveInDate || '';
 
     // E-posta ve Şifre alanları
-    document.getElementById('apartment-email').value = apt.email || '';
-    document.getElementById('apartment-password-display').value = apt.password || '';
+    (document.getElementById('apartment-email') as HTMLInputElement).value = apt.email || '';
+    (document.getElementById('apartment-password-display') as HTMLInputElement).value = apt.password || '';
 
     // Store number distinctly if it's a new record
-    document.getElementById('apartment-form').dataset.aptNumber = apt.number;
+    document.getElementById('apartment-form').dataset.aptNumber = apt.number.toString();
 
     openModal('apartment-modal');
 }
@@ -1394,7 +1412,7 @@ function updateResidentDashboard() {
         ? '<span class="status-badge paid">Bu Ay Ödendi ✓</span>'
         : '<span class="status-badge unpaid">Bu Ay Ödenmedi ✗</span>';
 
-    document.getElementById('resident-year').textContent = year;
+    document.getElementById('resident-year').textContent = year.toString();
 
     // Render bar chart for dues
     renderResidentDuesChart(year, apt);
@@ -1425,10 +1443,10 @@ function loadResidentProfile() {
     const countEl = document.getElementById('profile-resident-count');
     const statusEl = document.getElementById('profile-status-display');
 
-    if (nameEl) nameEl.value = aptData.residentName || '';
-    if (phoneEl) phoneEl.value = aptData.phone || '';
-    if (emailEl) emailEl.value = aptData.email || '';
-    if (countEl) countEl.value = aptData.residentCount || 0;
+    if (nameEl) (nameEl as HTMLInputElement).value = aptData.residentName || '';
+    if (phoneEl) (phoneEl as HTMLInputElement).value = aptData.phone || '';
+    if (emailEl) (emailEl as HTMLInputElement).value = aptData.email || '';
+    if (countEl) (countEl as HTMLInputElement).value = (aptData.residentCount || 0).toString();
 
     const statusMap = {
         'owner': 'Ev Sahibi (Oturuyor)',
@@ -1477,14 +1495,14 @@ function renderResidentDuesChart(year, apt) {
     timeline.innerHTML = html;
 
     // Update summary stats
-    document.getElementById('resident-paid-months').textContent = paidMonths;
-    document.getElementById('resident-unpaid-months').textContent = unpaidMonths;
-    document.getElementById('resident-total-paid').textContent = `₺${formatNumber(paidMonths * monthlyDue)}`;
+    document.getElementById('resident-paid-months').textContent = paidMonths.toString();
+    document.getElementById('resident-unpaid-months').textContent = unpaidMonths.toString();
+    document.getElementById('resident-total-paid').textContent = `₺${formatNumber(paidMonths * (monthlyDue || 0))}`;
 }
 
 function renderResidentMaintenance() {
     const container = document.getElementById('resident-maintenance-list');
-    const upcoming = AppState.maintenance.filter(m => m.status === 'pending').sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+    const upcoming = AppState.maintenance.filter(m => m.status === 'pending').sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5);
     if (upcoming.length === 0) {
         container.innerHTML = '<p class="empty-state">Yaklaşan bakım yok</p>';
         return;
@@ -1515,7 +1533,7 @@ function renderResidentTasks() {
 
 function renderResidentRecentDecisions() {
     const container = document.getElementById('resident-recent-decisions');
-    const recent = [...AppState.decisions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    const recent = [...AppState.decisions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
     if (recent.length === 0) {
         container.innerHTML = '<p class="empty-state">Henüz karar eklenmemiş</p>';
         return;
@@ -1542,7 +1560,7 @@ function viewDecisionDetail(id) {
 
 // ===== Charts =====
 function destroyAllCharts() {
-    Object.values(AppState.charts).forEach(chart => { if (chart) chart.destroy(); });
+    Object.values(AppState.charts).forEach(chart => { if (chart) (chart as any).destroy(); });
     AppState.charts = {};
 }
 
@@ -1557,7 +1575,7 @@ function initResidentCharts() {
 }
 
 function initDuesCollectionChart() {
-    const ctx = document.getElementById('dues-collection-chart');
+    const ctx = document.getElementById('dues-collection-chart') as HTMLCanvasElement;
     if (!ctx) return;
 
     const data = getDuesCollectionData(AppState.currentYear);
@@ -1568,7 +1586,7 @@ function initDuesCollectionChart() {
     gradientBlue.addColorStop(0.5, 'rgba(59, 130, 246, 0.8)');
     gradientBlue.addColorStop(1, 'rgba(99, 102, 241, 0.7)');
 
-    AppState.charts.duesCollection = new Chart(ctx, {
+    (AppState.charts as any).duesCollection = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: MONTHS_SHORT,
@@ -1622,7 +1640,7 @@ function initDuesCollectionChart() {
 }
 
 function initFinancialStatusChart() {
-    const ctx = document.getElementById('financial-status-chart');
+    const ctx = document.getElementById('financial-status-chart') as HTMLCanvasElement;
     if (!ctx) return;
 
     const data = getMonthlyData(AppState.currentYear);
@@ -1644,7 +1662,7 @@ function initFinancialStatusChart() {
     gradientRed.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
     gradientRed.addColorStop(1, 'rgba(239, 68, 68, 0.05)');
 
-    AppState.charts.financialStatus = new Chart(ctx, {
+    (AppState.charts as any).financialStatus = new Chart(ctx, {
         type: 'line',
         data: {
             labels: MONTHS_SHORT,
@@ -1695,7 +1713,7 @@ function initFinancialStatusChart() {
                         usePointStyle: true,
                         pointStyle: 'circle',
                         padding: 20,
-                        font: { size: 12, weight: '500' }
+                        font: { size: 12, weight: 'bold' }
                     }
                 },
                 tooltip: {
@@ -1736,7 +1754,7 @@ function initFinancialStatusChart() {
 }
 
 function initIncomePieChart() {
-    const ctx = document.getElementById('income-pie-chart');
+    const ctx = document.getElementById('income-pie-chart') as HTMLCanvasElement;
     if (!ctx) return;
 
     const container = ctx.parentElement;
@@ -1782,7 +1800,7 @@ function initIncomePieChart() {
 }
 
 function initExpensePieChart() {
-    const ctx = document.getElementById('expense-pie-chart');
+    const ctx = document.getElementById('expense-pie-chart') as HTMLCanvasElement;
     if (!ctx) return;
 
     const container = ctx.parentElement;
@@ -1856,7 +1874,7 @@ function openModal(modalId) {
         const firstFocusable = modal.querySelector(
             'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        if (firstFocusable) firstFocusable.focus();
+        if (firstFocusable) (firstFocusable as HTMLElement).focus();
     });
 
     // Setup keyboard trap
@@ -1864,10 +1882,11 @@ function openModal(modalId) {
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
+    const modal = document.getElementById(modalId) as HTMLElement;
     if (!modal) return;
 
     modal.classList.remove('active');
+    modal.style.display = 'none';
     document.body.style.overflow = '';
 
     // Remove ARIA on close
@@ -1995,7 +2014,7 @@ async function sendPasswordEmail(apartmentNumber) {
 }
 
 // ===== Enhanced Toast System =====
-function showToast(message, type = 'info', options = {}) {
+function showToast(message, type = 'info', options: any = {}) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
@@ -2099,36 +2118,36 @@ function escapeHtml(text) { const div = document.createElement('div'); div.textC
 function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = reject; }); }
 
 // ===== Global Window Exports (Required for modules) =====
-window.loginAdmin = loginAdmin;
-window.loginResident = loginResident;
-window.logout = logout;
-window.showSection = showSection;
-window.editTransaction = editTransaction;
-window.deleteTransaction = deleteTransaction;
-window.editBill = editBill;
-window.viewBill = viewBill;
-window.deleteBill = deleteBill;
-window.toggleDue = toggleDue;
-window.editDecision = editDecision;
-window.deleteDecision = deleteDecision;
-window.viewDecisionDetail = viewDecisionDetail; // Resident panel decision popup
-window.editMaintenance = editMaintenance;
-window.deleteMaintenance = deleteMaintenance;
-window.editTask = editTask;
-window.deleteTask = deleteTask;
-window.viewTaskDetail = viewTaskDetail;
-window.editApartment = editApartment; // New
-window.renderBills = renderBills;
-window.renderDuesTable = renderDuesTable;
-window.updateMonthlyDueAmount = updateMonthlyDueAmount;
-window.renderTransactions = renderTransactions;
-window.updateFinanceSummary = updateFinanceSummary;
-window.renderMaintenance = renderMaintenance;
-window.renderDecisions = renderDecisions;
-window.renderRecentDecisions = renderRecentDecisions;
-window.renderTasks = renderTasks;
-window.closeAllModals = closeAllModals;
-window.migrateData = migrateData; // New
+(window as any).loginAdmin = loginAdmin;
+(window as any).loginResident = loginResident;
+(window as any).logout = logout;
+(window as any).showSection = showSection;
+(window as any).editTransaction = editTransaction;
+(window as any).deleteTransaction = deleteTransaction;
+(window as any).editBill = editBill;
+(window as any).viewBill = viewBill;
+(window as any).deleteBill = deleteBill;
+(window as any).toggleDue = toggleDue;
+(window as any).editDecision = editDecision;
+(window as any).deleteDecision = deleteDecision;
+(window as any).viewDecisionDetail = viewDecisionDetail; // Resident panel decision popup
+(window as any).editMaintenance = editMaintenance;
+(window as any).deleteMaintenance = deleteMaintenance;
+(window as any).editTask = editTask;
+(window as any).deleteTask = deleteTask;
+(window as any).viewTaskDetail = viewTaskDetail;
+(window as any).editApartment = editApartment; // New
+(window as any).renderBills = renderBills;
+(window as any).renderDuesTable = renderDuesTable;
+(window as any).updateMonthlyDueAmount = updateMonthlyDueAmount;
+(window as any).renderTransactions = renderTransactions;
+(window as any).updateFinanceSummary = updateFinanceSummary;
+(window as any).renderMaintenance = renderMaintenance;
+(window as any).renderDecisions = renderDecisions;
+(window as any).renderRecentDecisions = renderRecentDecisions;
+(window as any).renderTasks = renderTasks;
+(window as any).closeAllModals = closeAllModals;
+(window as any).migrateData = migrateData; // New
 
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -2142,27 +2161,27 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(`${btn.dataset.tab}-login-form`).classList.add('active');
+            document.getElementById(`${(btn as HTMLElement).dataset.tab}-login-form`).classList.add('active');
         });
     });
 
     // Login Forms
     document.getElementById('admin-login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const btn = e.target.querySelector('button');
+        const btn = (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).querySelector('button');
         const originalText = btn.innerHTML;
         btn.innerHTML = `<span class="spinner-sm"></span> Giriş Yapılıyor...`;
         btn.disabled = true;
 
-        await loginAdmin(document.getElementById('admin-password').value);
+        await loginAdmin((document.getElementById('admin-password') as HTMLInputElement).value);
 
         btn.innerHTML = originalText;
         btn.disabled = false;
     });
     document.getElementById('resident-login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const apartmentNumber = parseInt(document.getElementById('apartment-number').value);
-        const password = document.getElementById('resident-password').value;
+        const apartmentNumber = parseInt((document.getElementById('apartment-number') as HTMLInputElement).value);
+        const password = (document.getElementById('resident-password') as HTMLInputElement).value;
 
         // Şifre doğrulama
         const apt = (AppState.apartments || []).find(a => a.number === apartmentNumber);
@@ -2198,10 +2217,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navigation
     document.querySelectorAll('#admin-dashboard .nav-link[data-section]').forEach(link => {
-        link.addEventListener('click', e => { e.preventDefault(); showSection(link.dataset.section); document.getElementById('nav-links').classList.remove('active'); });
+        link.addEventListener('click', e => { e.preventDefault(); showSection((link as HTMLElement).dataset.section); document.getElementById('nav-links').classList.remove('active'); });
     });
     document.querySelectorAll('#resident-dashboard .nav-link[data-section]').forEach(link => {
-        link.addEventListener('click', e => { e.preventDefault(); showSection(link.dataset.section); document.getElementById('resident-nav-links').classList.remove('active'); });
+        link.addEventListener('click', e => { e.preventDefault(); showSection((link as HTMLElement).dataset.section); document.getElementById('resident-nav-links').classList.remove('active'); });
     });
 
     // Mobile Menu
@@ -2215,7 +2234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#resident-tab-bar .tab-item').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             // Show section
-            showSection(tab.dataset.section);
+            showSection((tab as HTMLElement).dataset.section);
         });
     });
 
@@ -2241,7 +2260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const menuBtn = document.getElementById('resident-mobile-menu-toggle');
         const tabMenuBtn = document.getElementById('tab-menu-toggle');
         if (navLinks && navLinks.classList.contains('active')) {
-            if (!navLinks.contains(e.target) && e.target !== menuBtn && e.target !== tabMenuBtn && !menuBtn?.contains(e.target) && !tabMenuBtn?.contains(e.target)) {
+            if (!navLinks.contains(e.target as Node) && e.target !== menuBtn && e.target !== tabMenuBtn && !menuBtn?.contains(e.target as Node) && !tabMenuBtn?.contains(e.target as Node)) {
                 navLinks.classList.remove('active');
             }
         }
@@ -2252,17 +2271,17 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            AppState.currentTaskFilter = btn.dataset.filter;
+            AppState.currentTaskFilter = (btn as HTMLElement).dataset.filter;
             renderTasks();
         });
     });
 
     // Add Buttons
-    document.getElementById('add-bill-btn').addEventListener('click', () => { document.getElementById('bill-modal-title').textContent = 'Fatura Ekle'; document.getElementById('bill-id').value = ''; openModal('bill-modal'); });
-    document.getElementById('add-decision-btn').addEventListener('click', () => { document.getElementById('decision-modal-title').textContent = 'Karar Ekle'; document.getElementById('decision-id').value = ''; document.getElementById('decision-date').value = new Date().toISOString().split('T')[0]; openModal('decision-modal'); });
-    document.getElementById('add-transaction-btn').addEventListener('click', () => { document.getElementById('transaction-modal-title').textContent = 'Gelir/Gider Ekle'; document.getElementById('transaction-id').value = ''; document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0]; openModal('transaction-modal'); });
-    document.getElementById('add-maintenance-btn').addEventListener('click', () => { document.getElementById('maintenance-modal-title').textContent = 'Bakım Ekle'; document.getElementById('maintenance-id').value = ''; document.getElementById('maintenance-date').value = new Date().toISOString().split('T')[0]; openModal('maintenance-modal'); });
-    document.getElementById('add-task-btn').addEventListener('click', () => { document.getElementById('task-modal-title').textContent = 'İş Ekle'; document.getElementById('task-id').value = ''; openModal('task-modal'); });
+    document.getElementById('add-bill-btn').addEventListener('click', () => { document.getElementById('bill-modal-title').textContent = 'Fatura Ekle'; (document.getElementById('bill-id') as HTMLInputElement).value = ''; openModal('bill-modal'); });
+    document.getElementById('add-decision-btn').addEventListener('click', () => { document.getElementById('decision-modal-title').textContent = 'Karar Ekle'; (document.getElementById('decision-id') as HTMLInputElement).value = ''; (document.getElementById('decision-date') as HTMLInputElement).value = new Date().toISOString().split('T')[0]; openModal('decision-modal'); });
+    document.getElementById('add-transaction-btn').addEventListener('click', () => { document.getElementById('transaction-modal-title').textContent = 'Gelir/Gider Ekle'; (document.getElementById('transaction-id') as HTMLInputElement).value = ''; (document.getElementById('transaction-date') as HTMLInputElement).value = new Date().toISOString().split('T')[0]; openModal('transaction-modal'); });
+    document.getElementById('add-maintenance-btn').addEventListener('click', () => { document.getElementById('maintenance-modal-title').textContent = 'Bakım Ekle'; (document.getElementById('maintenance-id') as HTMLInputElement).value = ''; (document.getElementById('maintenance-date') as HTMLInputElement).value = new Date().toISOString().split('T')[0]; openModal('maintenance-modal'); });
+    document.getElementById('add-task-btn').addEventListener('click', () => { document.getElementById('task-modal-title').textContent = 'İş Ekle'; (document.getElementById('task-id') as HTMLInputElement).value = ''; openModal('task-modal'); });
 
     // Migration Button
     const migrateBtn = document.getElementById('migrate-data-btn');
@@ -2279,14 +2298,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('apartment-form').addEventListener('submit', async e => {
         e.preventDefault();
         const data = {
-            residentName: document.getElementById('apartment-resident').value,
-            status: document.getElementById('apartment-status').value,
-            ownerName: document.getElementById('apartment-owner').value,
-            phone: document.getElementById('apartment-phone').value,
-            residentCount: parseInt(document.getElementById('apartment-count').value),
-            moveInDate: document.getElementById('apartment-move-in').value,
-            email: document.getElementById('apartment-email').value,
-            password: document.getElementById('apartment-password-display').value
+            residentName: (document.getElementById('apartment-resident') as HTMLInputElement).value,
+            status: (document.getElementById('apartment-status') as HTMLSelectElement).value,
+            ownerName: (document.getElementById('apartment-owner') as HTMLInputElement).value,
+            phone: (document.getElementById('apartment-phone') as HTMLInputElement).value,
+            residentCount: parseInt((document.getElementById('apartment-count') as HTMLInputElement).value),
+            moveInDate: (document.getElementById('apartment-move-in') as HTMLInputElement).value,
+            email: (document.getElementById('apartment-email') as HTMLInputElement).value,
+            password: (document.getElementById('apartment-password-display') as HTMLInputElement).value
         };
         await saveApartment(data);
         closeModal('apartment-modal');
@@ -2295,7 +2314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Password Management Buttons
     document.getElementById('generate-password-btn').addEventListener('click', () => {
         const newPassword = generatePassword();
-        document.getElementById('apartment-password-display').value = newPassword;
+        (document.getElementById('apartment-password-display') as HTMLInputElement).value = newPassword;
         showToast('Yeni şifre oluşturuldu: ' + newPassword, 'success');
     });
 
@@ -2304,14 +2323,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // First save the current form data (including password)
         const data = {
-            residentName: document.getElementById('apartment-resident').value,
-            status: document.getElementById('apartment-status').value,
-            ownerName: document.getElementById('apartment-owner').value,
-            phone: document.getElementById('apartment-phone').value,
-            residentCount: parseInt(document.getElementById('apartment-count').value),
-            moveInDate: document.getElementById('apartment-move-in').value,
-            email: document.getElementById('apartment-email').value,
-            password: document.getElementById('apartment-password-display').value
+            residentName: (document.getElementById('apartment-resident') as HTMLInputElement).value,
+            status: (document.getElementById('apartment-status') as HTMLSelectElement).value,
+            ownerName: (document.getElementById('apartment-owner') as HTMLInputElement).value,
+            phone: (document.getElementById('apartment-phone') as HTMLInputElement).value,
+            residentCount: parseInt((document.getElementById('apartment-count') as HTMLInputElement).value),
+            moveInDate: (document.getElementById('apartment-move-in') as HTMLInputElement).value,
+            email: (document.getElementById('apartment-email') as HTMLInputElement).value,
+            password: (document.getElementById('apartment-password-display') as HTMLInputElement).value
         };
 
         await saveApartment(data);
@@ -2323,48 +2342,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Form Submissions
     document.getElementById('bill-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const id = document.getElementById('bill-id').value;
-        const data = {
-            type: document.getElementById('bill-type').value,
-            month: parseInt(document.getElementById('bill-month').value),
-            year: parseInt(document.getElementById('bill-year').value),
-            amount: parseFloat(document.getElementById('bill-amount').value),
-            notes: document.getElementById('bill-notes').value
+        const id = (document.getElementById('bill-id') as HTMLInputElement).value;
+        const data: any = {
+            type: (document.getElementById('bill-type') as HTMLSelectElement).value,
+            month: parseInt((document.getElementById('bill-month') as HTMLSelectElement).value),
+            year: parseInt((document.getElementById('bill-year') as HTMLSelectElement).value),
+            amount: parseFloat((document.getElementById('bill-amount') as HTMLInputElement).value),
+            notes: (document.getElementById('bill-notes') as HTMLTextAreaElement).value
         };
-        const fileInput = document.getElementById('bill-file');
-        if (fileInput.files.length > 0) { const file = fileInput.files[0]; data.fileData = await fileToBase64(file); data.fileType = file.type.includes('pdf') ? 'pdf' : 'image'; }
+        const fileInput = document.getElementById('bill-file') as HTMLInputElement;
+        if (fileInput.files && fileInput.files.length > 0) { const file = fileInput.files[0]; data.fileData = await fileToBase64(file); data.fileType = file.type.includes('pdf') ? 'pdf' : 'image'; }
         if (id) updateBill(id, data); else addBill(data);
         closeModal('bill-modal'); renderBills();
     });
 
     document.getElementById('decision-form').addEventListener('submit', e => {
         e.preventDefault();
-        const id = document.getElementById('decision-id').value;
-        const data = { title: document.getElementById('decision-title').value, date: document.getElementById('decision-date').value, content: document.getElementById('decision-content').value };
+        const id = (document.getElementById('decision-id') as HTMLInputElement).value;
+        const data = { title: (document.getElementById('decision-title') as HTMLInputElement).value, date: (document.getElementById('decision-date') as HTMLInputElement).value, content: (document.getElementById('decision-content') as HTMLTextAreaElement).value };
         if (id) updateDecision(id, data); else addDecision(data);
         closeModal('decision-modal'); renderDecisions(); renderRecentDecisions();
     });
 
     document.getElementById('transaction-form').addEventListener('submit', e => {
         e.preventDefault();
-        const id = document.getElementById('transaction-id').value;
-        const data = { type: document.getElementById('transaction-type').value, category: document.getElementById('transaction-category').value, amount: parseFloat(document.getElementById('transaction-amount').value), date: document.getElementById('transaction-date').value, description: document.getElementById('transaction-description').value };
+        const id = (document.getElementById('transaction-id') as HTMLInputElement).value;
+        const data = { type: (document.getElementById('transaction-type') as HTMLSelectElement).value, category: (document.getElementById('transaction-category') as HTMLSelectElement).value, amount: parseFloat((document.getElementById('transaction-amount') as HTMLInputElement).value), date: (document.getElementById('transaction-date') as HTMLInputElement).value, description: (document.getElementById('transaction-description') as HTMLTextAreaElement).value };
         if (id) updateTransaction(id, data); else addTransaction(data);
         closeModal('transaction-modal'); renderTransactions(); updateFinanceSummary();
     });
 
     document.getElementById('maintenance-form').addEventListener('submit', e => {
         e.preventDefault();
-        const id = document.getElementById('maintenance-id').value;
-        const data = { title: document.getElementById('maintenance-title').value, date: document.getElementById('maintenance-date').value, description: document.getElementById('maintenance-description').value, status: document.getElementById('maintenance-status').value };
+        const id = (document.getElementById('maintenance-id') as HTMLInputElement).value;
+        const data = { title: (document.getElementById('maintenance-title') as HTMLInputElement).value, date: (document.getElementById('maintenance-date') as HTMLInputElement).value, description: (document.getElementById('maintenance-description') as HTMLTextAreaElement).value, status: (document.getElementById('maintenance-status') as HTMLSelectElement).value };
         if (id) updateMaintenance(id, data); else addMaintenance(data);
         closeModal('maintenance-modal'); renderMaintenance();
     });
 
     document.getElementById('task-form').addEventListener('submit', e => {
         e.preventDefault();
-        const id = document.getElementById('task-id').value;
-        const data = { title: document.getElementById('task-title').value, description: document.getElementById('task-description').value, detail: document.getElementById('task-detail').value, status: document.getElementById('task-status').value, priority: document.getElementById('task-priority').value };
+        const id = (document.getElementById('task-id') as HTMLInputElement).value;
+        const data = { title: (document.getElementById('task-title') as HTMLInputElement).value, description: (document.getElementById('task-description') as HTMLTextAreaElement).value, detail: (document.getElementById('task-detail') as HTMLTextAreaElement).value, status: (document.getElementById('task-status') as HTMLSelectElement).value, priority: (document.getElementById('task-priority') as HTMLSelectElement).value };
         if (id) updateTask(id, data); else addTask(data);
         closeModal('task-modal'); renderTasks();
     });
@@ -2385,10 +2404,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Only update allowed fields (not status, password, etc.)
             const updateData = {
                 ...aptData,
-                residentName: document.getElementById('profile-resident-name').value,
-                phone: document.getElementById('profile-phone').value,
-                email: document.getElementById('profile-email').value,
-                residentCount: parseInt(document.getElementById('profile-resident-count').value) || 0
+                residentName: (document.getElementById('profile-resident-name') as HTMLInputElement).value,
+                phone: (document.getElementById('profile-phone') as HTMLInputElement).value,
+                email: (document.getElementById('profile-email') as HTMLInputElement).value,
+                residentCount: parseInt((document.getElementById('profile-resident-count') as HTMLInputElement).value) || 0
             };
 
             // Save via Firebase
@@ -2422,9 +2441,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+            const currentPassword = (document.getElementById('current-password') as HTMLInputElement).value;
+            const newPassword = (document.getElementById('new-password') as HTMLInputElement).value;
+            const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement).value;
 
             // Validate current password
             if (aptData.password !== currentPassword) {
@@ -2466,7 +2485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Şifreniz başarıyla değiştirildi!', 'success');
 
                 // Clear form
-                passwordChangeForm.reset();
+                (passwordChangeForm as HTMLFormElement).reset();
             } catch (error) {
                 console.error('Password change error:', error);
                 showToast('Şifre değiştirme başarısız. Lütfen tekrar deneyin.', 'error');
@@ -2516,7 +2535,7 @@ function initParallax() {
         if (!ticking) {
             requestAnimationFrame(() => {
                 const scrollY = window.scrollY;
-                particles.style.transform = `translateY(${scrollY * 0.3}px)`;
+                (particles as HTMLElement).style.transform = `translateY(${scrollY * 0.3}px)`;
                 ticking = false;
             });
             ticking = true;

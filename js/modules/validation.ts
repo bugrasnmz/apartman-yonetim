@@ -135,7 +135,7 @@ export function validateForm(data, rules) {
     let valid = true;
 
     for (const [field, fieldRules] of Object.entries(rules)) {
-        for (const rule of fieldRules) {
+        for (const rule of (fieldRules as Function[])) {
             const result = rule(data[field]);
             if (!result.valid) {
                 errors[field] = result.message;
@@ -163,7 +163,7 @@ export function showFormErrors(formId, errors) {
             input.classList.add('input-error');
             const errorEl = document.createElement('span');
             errorEl.className = 'field-error';
-            errorEl.textContent = message;
+            errorEl.textContent = message as string;
             input.parentNode.appendChild(errorEl);
         }
     }

@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * Audit Logger - Önemli işlemleri logla
  * Güvenlik ve debugging için kritik işlemlerin kaydını tutar
@@ -186,7 +187,7 @@ export async function getRecentLogs(count = 50, category = null) {
         }
 
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as object }));
     } catch (error) {
         console.error('Audit log getirme hatası:', error);
         return [];
@@ -206,7 +207,7 @@ export async function getUserLogs(userId, count = 50) {
         );
 
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as object }));
     } catch (error) {
         console.error('Kullanıcı logları getirme hatası:', error);
         return [];

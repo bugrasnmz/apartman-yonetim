@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, query, orderBy, limit, where } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 
 // Import centralized config
@@ -42,6 +42,7 @@ const APP_CONFIG = {
 export {
     app, db, auth,
     collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
+    query, orderBy, limit, where,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     COLLECTIONS,
     APP_CONFIG,

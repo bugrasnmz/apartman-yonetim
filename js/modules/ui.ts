@@ -24,8 +24,8 @@ export function toggleTheme() {
 
 // ===== Custom Cursor =====
 export function initCustomCursor() {
-    const dot = document.querySelector('.cursor-dot');
-    const outline = document.querySelector('.cursor-outline');
+    const dot = document.querySelector('.cursor-dot') as HTMLElement;
+    const outline = document.querySelector('.cursor-outline') as HTMLElement;
 
     if (!dot || !outline) return;
 
