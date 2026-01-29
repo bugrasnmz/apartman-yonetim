@@ -3823,3 +3823,51 @@ tbody tr:hover {
         transform: rotate(360deg);
     }
 }
+
+/* ===== Form Validation Styles ===== */
+.input-error {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 3px var(--danger-bg) !important;
+}
+
+.input-error:focus {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 4px var(--danger-bg) !important;
+}
+
+.field-error {
+    display: block;
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.form-group.has-error label {
+    color: var(--danger);
+}
+
+/* Success state */
+.input-success {
+    border-color: var(--success) !important;
+    box-shadow: 0 0 0 3px var(--success-bg) !important;
+}
+
+/* Real-time validation indicator */
+.validation-indicator {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
+
+.validation-indicator.valid::after {
+    content: '✓';
+    color: var(--success);
+}
+
+.validation-indicator.invalid::after {
+    content: '✕';
+    color: var(--danger);
+}
