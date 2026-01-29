@@ -3946,3 +3946,186 @@ tbody tr:hover {
     content: '✕';
     color: var(--danger);
 }
+
+/* ===== Mobile Touch Optimizations ===== */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Minimum touch target size: 44x44px (WCAG AAA) */
+    button,
+    .btn,
+    .nav-link,
+    .tab-btn,
+    .filter-btn,
+    .modal-close,
+    .toast-close,
+    select,
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Remove hover effects on touch devices */
+    .card:hover,
+    .glass-card:hover,
+    .transaction-item:hover,
+    .bill-item:hover,
+    .decision-item:hover {
+        transform: none;
+    }
+
+    /* Add active states for touch feedback */
+    .btn:active,
+    .nav-link:active,
+    .card:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+
+    /* Smooth momentum scrolling */
+    .main-content,
+    .modal-content,
+    .table-scroll {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent text selection on interactive elements */
+    button,
+    .btn,
+    .nav-link {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ===== Safe Area Support (iPhone notch) ===== */
+@supports (padding: max(0px)) {
+
+    .navbar,
+    .glass-nav {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    .main-content {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+}
+
+/* ===== Performance Optimizations ===== */
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .particle {
+        display: none;
+    }
+}
+
+/* GPU acceleration for animations */
+.modal-content,
+.toast,
+.card,
+.nav-link,
+.btn {
+    will-change: transform;
+}
+
+/* Contain paint for performance */
+.main-content,
+.transactions-container {
+    contain: layout paint;
+}
+
+/* ===== Extra Mobile Improvements ===== */
+@media (max-width: 768px) {
+
+    /* Larger form inputs for easier touch */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+        /* Prevents iOS zoom on focus */
+        padding: 14px 16px;
+    }
+
+    /* Better button spacing */
+    .modal-actions {
+        gap: 12px;
+        flex-direction: column-reverse;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Sticky header actions */
+    .section-header {
+        position: sticky;
+        top: 0;
+        background: var(--bg-main);
+        z-index: 10;
+        padding: 16px 0;
+        margin: -16px 0 16px 0;
+    }
+
+    /* Swipe hint for tables */
+    .table-scroll::after {
+        content: '← Kaydırın →';
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        padding: 8px;
+    }
+
+    /* Toast positioning for mobile */
+    .toast-container {
+        top: auto;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        left: 16px;
+        right: 16px;
+        max-width: none;
+    }
+
+    .toast {
+        width: 100%;
+    }
+}
+
+/* ===== Pull-to-Refresh Hint ===== */
+.pull-to-refresh {
+    position: fixed;
+    top: -50px;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 14px;
+    transition: top 0.3s;
+    z-index: 1000;
+}
+
+.pull-to-refresh.visible {
+    top: 0;
+}
+
+.pull-to-refresh .spinner {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
