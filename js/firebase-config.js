@@ -2,6 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// Import centralized config
+import { CONFIG, TOTAL_APARTMENTS, MONTHS, MONTHS_SHORT, CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS } from './app.config.js';
+
 const firebaseConfig = {
     apiKey: "AIzaSyBxn6PXq7CjQGklvI8prNMIJiai2t5916w",
     authDomain: "apartman-yonetim-18730.firebaseapp.com",
@@ -28,12 +31,12 @@ const COLLECTIONS = {
     SETTINGS: 'settings'
 };
 
-// App Configuration
+// App Configuration - backward compatibility wrapper
 // NOTE: In production, consider using environment variables via a build tool
 const APP_CONFIG = {
     ADMIN_EMAIL: 'dogaaptyonetim@gmail.com',
-    TOTAL_APARTMENTS: 12,
-    SESSION_STORAGE_KEY: 'apt_resident_session'
+    TOTAL_APARTMENTS: CONFIG.apartment.totalUnits,
+    SESSION_STORAGE_KEY: CONFIG.session.storageKey
 };
 
 export {
@@ -41,5 +44,13 @@ export {
     collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     COLLECTIONS,
-    APP_CONFIG
+    APP_CONFIG,
+    // Re-export from app.config.js for convenience
+    CONFIG,
+    TOTAL_APARTMENTS,
+    MONTHS,
+    MONTHS_SHORT,
+    CATEGORY_LABELS,
+    STATUS_LABELS,
+    PRIORITY_LABELS
 };
