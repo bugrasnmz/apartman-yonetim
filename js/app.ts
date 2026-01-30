@@ -2493,11 +2493,385 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ===== Notification System (GREEN-API) =====
+    // Save GREEN-API Config
+    const saveGreenApiBtn = document.getElementById('save-greenapi-btn');
+    if (saveGreenApiBtn) {
+        saveGreenApiBtn.addEventListener('click', async () => {
+            const instanceId = (document.getElementById('greenapi-instance') as HTMLInputElement).value.trim();
+            const apiToken = (document.getElementById('greenapi-token') as HTMLInputElement).value.trim();
+
+            if (!instanceId || !apiToken) {
+                showToast('Instance ID ve API Token gerekli', 'error');
+                return;
+            }
+
+            AppState.settings.greenApiIdInstance = instanceId;
+            AppState.settings.greenApiToken = apiToken;
+
+            // Save to Firestore
+            try {
+                await setDoc(doc(db, 'settings', 'notifications'), {
+                    greenApiIdInstance: instanceId,
+                    greenApiToken: apiToken,
+                    updatedAt: new Date().toISOString()
+                });
+                showToast('GREEN-API ayarları kaydedildi', 'success');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showToast('Ayarlar kaydedilemedi', 'error');
+            }
+        });
+    }
+
+    // Test GREEN-API Connection
+    const testGreenApiBtn = document.getElementById('test-greenapi-btn');
+    if (testGreenApiBtn) {
+        testGreenApiBtn.addEventListener('click', async () => {
+            const instanceId = (document.getElementById('greenapi-instance') as HTMLInputElement).value.trim();
+            const apiToken = (document.getElementById('greenapi-token') as HTMLInputElement).value.trim();
+
+            if (!instanceId || !apiToken) {
+                showToast('Önce Instance ID ve API Token girin', 'error');
+                return;
+            }
+
+            testGreenApiBtn.textContent = '🔄 Test ediliyor...';
+            (testGreenApiBtn as HTMLButtonElement).disabled = true;
+
+            try {
+                const response = await fetch(`https://api.green-api.com/waInstance${instanceId}/getStateInstance/${apiToken}`);
+                const result = await response.json();
+
+                if (result.stateInstance === 'authorized') {
+                    showToast('✅ Bağlantı başarılı! WhatsApp bağlı.', 'success');
+                } else if (result.stateInstance === 'notAuthorized') {
+                    showToast('⚠️ WhatsApp bağlı değil. QR kod tarayın.', 'warning');
+                } else {
+                    showToast(`Durum: ${result.stateInstance || 'Bilinmiyor'}`, 'warning');
+                }
+            } catch (error: any) {
+                showToast('Bağlantı hatası: ' + error.message, 'error');
+            }
+
+            testGreenApiBtn.textContent = '🔗 Bağlantıyı Test Et';
+            (testGreenApiBtn as HTMLButtonElement).disabled = false;
+        });
+    }
+
+    // Quick Action: Send Due Reminder
+    const sendDueReminderBtn = document.getElementById('send-due-reminder-btn');
+    if (sendDueReminderBtn) {
+        sendDueReminderBtn.addEventListener('click', () => {
+            const templateSelect = document.getElementById('notification-template') as HTMLSelectElement;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+            const recipientRadio = document.querySelector('input[name="recipient-type"][value="unpaid"]') as HTMLInputElement;
+
+            if (templateSelect) templateSelect.value = 'due_reminder';
+            if (recipientRadio) recipientRadio.checked = true;
+            if (messageArea) {
+                const currentMonth = MONTHS[new Date().getMonth()];
+                messageArea.value = `Sayın {residentName},
+
+${currentMonth} ayı aidatınızın ödenmediğini hatırlatmak isteriz.
+
+Aidat Tutarı: ${AppState.settings.monthlyDueAmount || 500}₺
+
+Kolaylıklar dileriz.
+Apartman Yönetimi 🏢`;
+            }
+
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Quick Action: General Announcement
+    const sendAnnouncementBtn = document.getElementById('send-general-announcement-btn');
+    if (sendAnnouncementBtn) {
+        sendAnnouncementBtn.addEventListener('click', () => {
+            const templateSelect = document.getElementById('notification-template') as HTMLSelectElement;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+            const recipientRadio = document.querySelector('input[name="recipient-type"][value="all"]') as HTMLInputElement;
+
+            if (templateSelect) templateSelect.value = 'general_message';
+            if (recipientRadio) recipientRadio.checked = true;
+            if (messageArea) {
+                messageArea.value = `Sayın Sakinlerimiz,
+
+[Duyuru içeriğinizi buraya yazın]
+
+Apartman Yönetimi 🏢`;
+            }
+
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Send Notification Button (opens modal)
+    const sendNotificationBtn = document.getElementById('send-notification-btn');
+    if (sendNotificationBtn) {
+        sendNotificationBtn.addEventListener('click', () => {
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Template Change Handler
+    const templateSelect = document.getElementById('notification-template');
+    if (templateSelect) {
+        templateSelect.addEventListener('change', () => {
+            const template = (templateSelect as HTMLSelectElement).value;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+
+            const templates: Record<string, string> = {
+                'due_reminder': `Sayın {residentName},
+
+${MONTHS[new Date().getMonth()]} ayı aidatınızın ödenmediğini hatırlatmak isteriz.
+
+Aidat Tutarı: ${AppState.settings.monthlyDueAmount || 500}₺
+
+Kolaylıklar dileriz.
+Apartman Yönetimi 🏢`,
+                'maintenance_notice': `Sayın Sakinlerimiz,
+
+[Tarih] tarihinde [bakım türü] bakımı yapılacaktır.
+
+Detaylar: [Detaylar]
+
+Anlayışınız için teşekkür ederiz.
+Apartman Yönetimi 🏢`,
+                'decision_announce': `Sayın Sakinlerimiz,
+
+Yeni bir apartman kararı alınmıştır:
+
+📋 [Karar başlığı]
+
+Detaylar için yönetim panelini ziyaret edebilirsiniz.
+
+Apartman Yönetimi 🏢`,
+                'general_message': `Sayın Sakinlerimiz,
+
+[Mesajınızı buraya yazın]
+
+Apartman Yönetimi 🏢`,
+                'custom': ''
+            };
+
+            if (messageArea && templates[template] !== undefined) {
+                messageArea.value = templates[template];
+            }
+            updateNotificationPreview();
+        });
+    }
+
+    // Message Change Handler (update preview)
+    const notificationMessage = document.getElementById('notification-message');
+    if (notificationMessage) {
+        notificationMessage.addEventListener('input', updateNotificationPreview);
+    }
+
+    // Recipient Type Change Handler
+    const recipientRadios = document.querySelectorAll('input[name="recipient-type"]');
+    recipientRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const customGroup = document.getElementById('custom-recipients-group');
+            const selectedValue = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+
+            if (customGroup) {
+                customGroup.style.display = selectedValue === 'custom' ? 'block' : 'none';
+            }
+
+            // Populate apartment checkboxes if custom
+            if (selectedValue === 'custom') {
+                populateApartmentCheckboxes();
+            }
+
+            updateNotificationPreview();
+        });
+    });
+
+    // Notification Form Submit
+    const notificationForm = document.getElementById('notification-form');
+    if (notificationForm) {
+        notificationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const instanceId = AppState.settings.greenApiIdInstance || (document.getElementById('greenapi-instance') as HTMLInputElement)?.value;
+            const apiToken = AppState.settings.greenApiToken || (document.getElementById('greenapi-token') as HTMLInputElement)?.value;
+
+            if (!instanceId || !apiToken) {
+                showToast('GREEN-API yapılandırması eksik', 'error');
+                return;
+            }
+
+            const message = (document.getElementById('notification-message') as HTMLTextAreaElement).value;
+            const recipientType = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+
+            if (!message.trim()) {
+                showToast('Mesaj içeriği gerekli', 'error');
+                return;
+            }
+
+            // Get recipients based on selection
+            let recipients: Array<{ apartmentNo: number, residentName: string, phoneNumber: string }> = [];
+
+            if (recipientType === 'all') {
+                recipients = AppState.apartments
+                    .filter(apt => apt.contactNumber && apt.contactNumber.trim())
+                    .map(apt => ({ apartmentNo: apt.apartmentNo, residentName: apt.residentName, phoneNumber: apt.contactNumber }));
+            } else if (recipientType === 'unpaid') {
+                const currentYear = new Date().getFullYear();
+                const currentMonth = new Date().getMonth() + 1;
+                recipients = AppState.apartments
+                    .filter(apt => {
+                        const isPaid = AppState.dues[currentYear]?.[apt.apartmentNo]?.[currentMonth];
+                        return !isPaid && apt.contactNumber && apt.contactNumber.trim();
+                    })
+                    .map(apt => ({ apartmentNo: apt.apartmentNo, residentName: apt.residentName, phoneNumber: apt.contactNumber }));
+            } else if (recipientType === 'custom') {
+                const checkboxes = document.querySelectorAll('#apartment-checkboxes input:checked');
+                checkboxes.forEach(cb => {
+                    const aptNo = parseInt((cb as HTMLInputElement).value);
+                    const apt = AppState.apartments.find(a => a.apartmentNo === aptNo);
+                    if (apt && apt.contactNumber) {
+                        recipients.push({ apartmentNo: apt.apartmentNo, residentName: apt.residentName, phoneNumber: apt.contactNumber });
+                    }
+                });
+            }
+
+            if (recipients.length === 0) {
+                showToast('Telefon numarası olan alıcı bulunamadı', 'error');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = document.getElementById('send-notification-submit');
+            if (submitBtn) {
+                (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'none';
+                (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'inline';
+                (submitBtn as HTMLButtonElement).disabled = true;
+            }
+
+            // Send messages
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const recipient of recipients) {
+                const personalizedMessage = message
+                    .replace(/{residentName}/g, recipient.residentName)
+                    .replace(/{apartmentNo}/g, String(recipient.apartmentNo));
+
+                // Format phone number
+                let phone = recipient.phoneNumber.replace(/\D/g, '');
+                if (phone.startsWith('0')) phone = '90' + phone.substring(1);
+                if (!phone.startsWith('90')) phone = '90' + phone;
+
+                try {
+                    const response = await fetch(`https://api.green-api.com/waInstance${instanceId}/sendMessage/${apiToken}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatId: phone + '@c.us', message: personalizedMessage })
+                    });
+
+                    const result = await response.json();
+                    if (result.idMessage) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error('Send error:', error);
+                    failCount++;
+                }
+
+                // Wait between messages
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+
+            // Reset button
+            if (submitBtn) {
+                (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'inline';
+                (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'none';
+                (submitBtn as HTMLButtonElement).disabled = false;
+            }
+
+            // Show result
+            if (failCount === 0) {
+                showToast(`✅ ${successCount} mesaj gönderildi`, 'success');
+            } else if (successCount === 0) {
+                showToast(`❌ Hiçbir mesaj gönderilemedi`, 'error');
+            } else {
+                showToast(`${successCount} başarılı, ${failCount} başarısız`, 'warning');
+            }
+
+            // Update stats
+            const totalSentEl = document.getElementById('total-sent-notifications');
+            if (totalSentEl) {
+                totalSentEl.textContent = String(parseInt(totalSentEl.textContent || '0') + successCount);
+            }
+
+            closeAllModals();
+        });
+    }
+
     // Modal Close
     document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => btn.addEventListener('click', closeAllModals));
     document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.addEventListener('click', closeAllModals));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllModals(); });
 });
+
+// ===== Notification Helper Functions =====
+function updateNotificationPreview() {
+    const message = (document.getElementById('notification-message') as HTMLTextAreaElement)?.value || '';
+    const previewEl = document.getElementById('notification-preview-text');
+    if (previewEl) {
+        // Replace placeholders with sample values
+        const preview = message
+            .replace(/{residentName}/g, 'Örnek Sakin')
+            .replace(/{apartmentNo}/g, '1');
+        previewEl.textContent = preview || 'Mesaj önizlemesi burada görünecek';
+    }
+
+    // Update recipient count
+    const recipientType = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+    const countEl = document.getElementById('recipient-count');
+
+    if (countEl && recipientType) {
+        let count = 0;
+        if (recipientType === 'all') {
+            count = AppState.apartments.filter(apt => apt.contactNumber?.trim()).length;
+        } else if (recipientType === 'unpaid') {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            count = AppState.apartments.filter(apt => {
+                const isPaid = AppState.dues[currentYear]?.[apt.apartmentNo]?.[currentMonth];
+                return !isPaid && apt.contactNumber?.trim();
+            }).length;
+        } else if (recipientType === 'custom') {
+            count = document.querySelectorAll('#apartment-checkboxes input:checked').length;
+        }
+        countEl.textContent = String(count);
+    }
+}
+
+function populateApartmentCheckboxes() {
+    const container = document.getElementById('apartment-checkboxes');
+    if (!container) return;
+
+    container.innerHTML = AppState.apartments.map(apt => `
+        <label class="checkbox-item ${!apt.contactNumber?.trim() ? 'disabled' : ''}">
+            <input type="checkbox" value="${apt.apartmentNo}" ${!apt.contactNumber?.trim() ? 'disabled' : ''}>
+            <span>Daire ${apt.apartmentNo} - ${apt.residentName} ${!apt.contactNumber?.trim() ? '(Tel. yok)' : ''}</span>
+        </label>
+    `).join('');
+
+    // Add change listeners
+    container.querySelectorAll('input').forEach(cb => {
+        cb.addEventListener('change', updateNotificationPreview);
+    });
+}
 
 // ===== Scroll-Triggered Reveal Animations =====
 function initScrollReveal() {
