@@ -1,9 +1,10 @@
 /**
- * Notifications Service - WhatsApp notification with CallMeBot API
+ * Notifications Service - WhatsApp notification with GREEN-API
+ * Documentation: https://green-api.com/en/docs/api/sending/SendMessage/
  */
 
 import { AppState } from '../../modules/state.js';
-import { db, collection, addDoc, getDocs, COLLECTIONS } from '../../firebase-config.js';
+import { db, collection, addDoc, getDocs } from '../../firebase-config.js';
 import { toastSuccess, toastError, toastWarning } from '../../shared/ui/toast.js';
 import { eventBus, EVENTS } from '../../core/events.js';
 import type {
@@ -12,7 +13,7 @@ import type {
     NotificationHistory,
     NotificationTemplate,
     NotificationStatus,
-    CallMeBotConfig
+    GreenApiConfig
 } from './notifications.types.js';
 import { MESSAGE_TEMPLATES } from './notifications.types.js';
 
@@ -24,8 +25,8 @@ function generateId(): string {
 }
 
 /**
- * Format phone number for CallMeBot (must be international format without +)
- * Turkish numbers: 905XXXXXXXXX
+ * Format phone number for GREEN-API
+ * Format: 905XXXXXXXXX@c.us (country code + number + @c.us suffix)
  */
 function formatPhoneNumber(phone: string): string {
     // Remove all non-digits
@@ -41,20 +42,20 @@ function formatPhoneNumber(phone: string): string {
         cleaned = '90' + cleaned;
     }
 
-    return cleaned;
+    // GREEN-API format: phone@c.us
+    return cleaned + '@c.us';
 }
 
 /**
- * CallMeBot API URL builder
- * API format: https://api.callmebot.com/whatsapp.php?phone=XXXXX&text=MESSAGE&apikey=KEY
+ * GREEN-API URL builder
+ * API format: https://api.green-api.com/waInstance{idInstance}/sendMessage/{apiTokenInstance}
  */
-function buildCallMeBotUrl(phone: string, message: string, apiKey: string): string {
-    const encodedMessage = encodeURIComponent(message);
-    return `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encodedMessage}&apikey=${apiKey}`;
+function buildGreenApiUrl(idInstance: string, apiTokenInstance: string): string {
+    return `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiTokenInstance}`;
 }
 
 /**
- * Notifications Service - Send WhatsApp messages via CallMeBot
+ * Notifications Service - Send WhatsApp messages via GREEN-API
  */
 export const NotificationsService = {
     history: [] as NotificationHistory[],
@@ -64,7 +65,6 @@ export const NotificationsService = {
      */
     async initialize(): Promise<void> {
         try {
-            // Check if NOTIFICATIONS collection exists in constants
             const colName = 'notifications';
             const querySnapshot = await getDocs(collection(db, colName));
             this.history = querySnapshot.docs.map(doc => ({
@@ -77,22 +77,34 @@ export const NotificationsService = {
     },
 
     /**
-     * Send a single WhatsApp message via CallMeBot
-     * Note: CallMeBot requires each user to activate their phone first
+     * Send a single WhatsApp message via GREEN-API
      */
-    async sendMessage(phone: string, message: string, apiKey: string): Promise<{ success: boolean; error?: string }> {
+    async sendMessage(
+        phone: string,
+        message: string,
+        config: GreenApiConfig
+    ): Promise<{ success: boolean; error?: string }> {
         try {
-            const formattedPhone = formatPhoneNumber(phone);
-            const url = buildCallMeBotUrl(formattedPhone, message, apiKey);
+            const chatId = formatPhoneNumber(phone);
+            const url = buildGreenApiUrl(config.idInstance, config.apiTokenInstance);
 
-            // CallMeBot uses GET request
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chatId: chatId,
+                    message: message
+                })
+            });
 
-            if (response.ok) {
+            const result = await response.json();
+
+            if (response.ok && result.idMessage) {
                 return { success: true };
             } else {
-                const errorText = await response.text();
-                return { success: false, error: errorText };
+                return { success: false, error: result.message || 'Mesaj gönderilemedi' };
             }
         } catch (error: any) {
             return { success: false, error: error.message || 'Network error' };
@@ -106,13 +118,13 @@ export const NotificationsService = {
         recipients: NotificationRecipient[],
         message: string,
         templateType: NotificationTemplate,
-        apiKey: string
+        config: GreenApiConfig
     ): Promise<NotificationHistory> {
         const results: NotificationRecipient[] = [];
         let successCount = 0;
         let failedCount = 0;
 
-        // Send with delay to avoid rate limiting (1 message per second)
+        // Send with delay to avoid rate limiting (2 seconds between messages)
         for (const recipient of recipients) {
             if (!recipient.phoneNumber) {
                 results.push({
@@ -129,7 +141,7 @@ export const NotificationsService = {
                 .replace('{residentName}', recipient.residentName)
                 .replace('{apartmentNo}', String(recipient.apartmentNo));
 
-            const result = await this.sendMessage(recipient.phoneNumber, personalizedMessage, apiKey);
+            const result = await this.sendMessage(recipient.phoneNumber, personalizedMessage, config);
 
             if (result.success) {
                 results.push({
@@ -147,8 +159,8 @@ export const NotificationsService = {
                 failedCount++;
             }
 
-            // Wait 1.5 seconds between messages (CallMeBot rate limit)
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Wait 2 seconds between messages (GREEN-API rate limit)
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         // Create history record
@@ -234,20 +246,52 @@ export const NotificationsService = {
     },
 
     /**
-     * Check if CallMeBot API key is configured
+     * Check if GREEN-API is configured
      */
     isConfigured(): boolean {
-        return !!(AppState.settings.callMeBotApiKey);
+        return !!(AppState.settings.greenApiIdInstance && AppState.settings.greenApiToken);
     },
 
     /**
-     * Save CallMeBot API key to settings
+     * Get GREEN-API config from settings
      */
-    async saveApiKey(apiKey: string): Promise<void> {
-        AppState.settings.callMeBotApiKey = apiKey;
-        // Save to Firestore via settings
-        // This should be handled by the main app's settings save
-        toastSuccess('API anahtarı kaydedildi');
+    getConfig(): GreenApiConfig | null {
+        if (!this.isConfigured()) return null;
+        return {
+            idInstance: AppState.settings.greenApiIdInstance,
+            apiTokenInstance: AppState.settings.greenApiToken
+        };
+    },
+
+    /**
+     * Save GREEN-API credentials to settings
+     */
+    async saveConfig(idInstance: string, apiTokenInstance: string): Promise<void> {
+        AppState.settings.greenApiIdInstance = idInstance;
+        AppState.settings.greenApiToken = apiTokenInstance;
+        toastSuccess('GREEN-API ayarları kaydedildi');
+    },
+
+    /**
+     * Test GREEN-API connection
+     */
+    async testConnection(config: GreenApiConfig): Promise<boolean> {
+        try {
+            const url = `https://api.green-api.com/waInstance${config.idInstance}/getStateInstance/${config.apiTokenInstance}`;
+            const response = await fetch(url);
+            const result = await response.json();
+
+            if (result.stateInstance === 'authorized') {
+                toastSuccess('GREEN-API bağlantısı başarılı!');
+                return true;
+            } else {
+                toastError(`Bağlantı hatası: ${result.stateInstance || 'Bilinmeyen durum'}`);
+                return false;
+            }
+        } catch (error: any) {
+            toastError('Bağlantı test edilemedi: ' + error.message);
+            return false;
+        }
     }
 };
 

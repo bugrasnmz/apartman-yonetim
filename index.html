@@ -684,24 +684,32 @@
                         </button>
                     </div>
 
-                    <!-- CallMeBot API Key Configuration -->
+                    <!-- GREEN-API Configuration -->
                     <div class="transactions-container" style="margin-bottom: 24px;">
                         <div class="config-card glass-card">
-                            <h4>⚙️ CallMeBot Yapılandırması</h4>
-                            <p class="config-info">WhatsApp bildirimleri göndermek için CallMeBot API anahtarı
-                                gereklidir.</p>
+                            <h4>⚙️ GREEN-API Yapılandırması</h4>
+                            <p class="config-info">WhatsApp bildirimleri göndermek için GREEN-API hesabı gereklidir.</p>
                             <div class="form-row">
                                 <div class="form-group" style="flex: 1;">
-                                    <label for="callmebot-apikey">API Anahtarı</label>
-                                    <input type="password" id="callmebot-apikey" placeholder="CallMeBot API Key"
+                                    <label for="greenapi-instance">Instance ID</label>
+                                    <input type="text" id="greenapi-instance" placeholder="1234567890"
                                         autocomplete="off">
                                 </div>
-                                <button class="btn btn-secondary" id="save-apikey-btn">Kaydet</button>
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="greenapi-token">API Token</label>
+                                    <input type="password" id="greenapi-token" placeholder="xxxxxxxxxxxxxxxxxxxxxxx"
+                                        autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="form-row" style="gap: 8px; margin-top: 12px;">
+                                <button class="btn btn-secondary" id="test-greenapi-btn">🔗 Bağlantıyı Test Et</button>
+                                <button class="btn btn-primary" id="save-greenapi-btn">💾 Kaydet</button>
                             </div>
                             <small class="form-hint">
-                                API anahtarı almak için: <a
-                                    href="https://www.callmebot.com/blog/free-api-whatsapp-messages/"
-                                    target="_blank">CallMeBot Kurulum Rehberi</a>
+                                Ücretsiz hesap için: <a href="https://console.green-api.com/auth/register"
+                                    target="_blank">GREEN-API Kayıt</a> |
+                                <a href="https://green-api.com/en/docs/before-start/" target="_blank">Kurulum
+                                    Rehberi</a>
                             </small>
                         </div>
                     </div>

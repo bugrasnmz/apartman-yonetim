@@ -41,10 +41,10 @@ export interface NotificationHistory {
     sentBy: string;
 }
 
-// CallMeBot API configuration
-export interface CallMeBotConfig {
-    apiKey: string;
-    phoneNumber: string;
+// GREEN-API configuration
+export interface GreenApiConfig {
+    idInstance: string;
+    apiTokenInstance: string;
 }
 
 // Template labels for display
