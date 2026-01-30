@@ -216,6 +216,13 @@
                             </svg></span>
                         <span>Dökümanlar</span>
                     </a>
+                    <a href="#" class="nav-link" data-section="notifications">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg></span>
+                        <span>Bildirimler</span>
+                    </a>
                     <!-- Sidebar Footer - Theme & Logout -->
                     <div class="sidebar-footer">
                         <button class="theme-toggle sidebar-theme-toggle" id="theme-toggle" aria-label="Tema değiştir">
@@ -667,6 +674,81 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Notifications Section (NEW) -->
+                <section id="notifications-section" class="section">
+                    <div class="section-header">
+                        <h2>📱 Bildirim Yönetimi</h2>
+                        <button class="btn btn-primary" id="send-notification-btn">
+                            <span>+ Mesaj Gönder</span>
+                        </button>
+                    </div>
+
+                    <!-- CallMeBot API Key Configuration -->
+                    <div class="transactions-container" style="margin-bottom: 24px;">
+                        <div class="config-card glass-card">
+                            <h4>⚙️ CallMeBot Yapılandırması</h4>
+                            <p class="config-info">WhatsApp bildirimleri göndermek için CallMeBot API anahtarı
+                                gereklidir.</p>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="callmebot-apikey">API Anahtarı</label>
+                                    <input type="password" id="callmebot-apikey" placeholder="CallMeBot API Key"
+                                        autocomplete="off">
+                                </div>
+                                <button class="btn btn-secondary" id="save-apikey-btn">Kaydet</button>
+                            </div>
+                            <small class="form-hint">
+                                API anahtarı almak için: <a
+                                    href="https://www.callmebot.com/blog/free-api-whatsapp-messages/"
+                                    target="_blank">CallMeBot Kurulum Rehberi</a>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">✅</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Gönderilen</span>
+                                <span class="stat-card-value" id="total-sent-notifications">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">📱</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Kayıtlı Telefon</span>
+                                <span class="stat-card-value" id="registered-phones">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="transactions-container" style="margin-bottom: 24px;">
+                        <h4>⚡ Hızlı Eylemler</h4>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" id="send-due-reminder-btn">
+                                <span class="action-icon">💰</span>
+                                <span class="action-text">Aidat Hatırlatma</span>
+                                <span class="action-desc">Ödenmemiş aidatları hatırlat</span>
+                            </button>
+                            <button class="quick-action-btn" id="send-general-announcement-btn">
+                                <span class="action-icon">📢</span>
+                                <span class="action-text">Genel Duyuru</span>
+                                <span class="action-desc">Tüm sakinlere mesaj gönder</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notification History -->
+                    <div class="transactions-container">
+                        <h4>📜 Gönderim Geçmişi</h4>
+                        <div id="notifications-history" class="transactions-list">
+                            <p class="empty-state">Henüz bildirim gönderilmemiş</p>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
 
@@ -1048,6 +1130,81 @@
         </div>
 
         <!-- Modals -->
+        <!-- Notification Send Modal -->
+        <div class="modal" id="notification-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card modal-large">
+                <div class="modal-header">
+                    <h3 id="notification-modal-title">📱 Bildirim Gönder</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="notification-form" class="modal-form">
+                    <!-- Template Selection -->
+                    <div class="form-group">
+                        <label for="notification-template">Mesaj Şablonu</label>
+                        <select id="notification-template" required>
+                            <option value="due_reminder">💰 Aidat Hatırlatma</option>
+                            <option value="maintenance_notice">🔧 Bakım Bildirimi</option>
+                            <option value="decision_announce">📋 Karar Duyurusu</option>
+                            <option value="general_message">📢 Genel Duyuru</option>
+                            <option value="custom">✍️ Özel Mesaj</option>
+                        </select>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="form-group">
+                        <label for="notification-message">Mesaj İçeriği</label>
+                        <textarea id="notification-message" rows="6" placeholder="Mesajınızı yazın..."
+                            required></textarea>
+                        <small class="form-hint">Değişkenler: {residentName}, {apartmentNo}, {amount}, {month}</small>
+                    </div>
+
+                    <!-- Recipient Selection -->
+                    <div class="form-group">
+                        <label>Alıcılar</label>
+                        <div class="recipient-selection">
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="all" checked>
+                                <span>📢 Tüm Sakinler</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="unpaid">
+                                <span>💰 Aidat Ödemeyen</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="custom">
+                                <span>👥 Seçili Daireler</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Custom Recipients (shown when custom is selected) -->
+                    <div class="form-group" id="custom-recipients-group" style="display: none;">
+                        <label>Daire Seçimi</label>
+                        <div class="apartment-checkboxes" id="apartment-checkboxes">
+                            <!-- Generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="form-group">
+                        <label>Önizleme</label>
+                        <div class="message-preview" id="message-preview">
+                            <p class="preview-text">Mesaj önizlemesi burada görünecek...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary" id="send-notification-submit">
+                            <span class="btn-text">📤 Gönder</span>
+                            <span class="btn-loading" style="display: none;">Gönderiliyor...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Document Upload Modal -->
         <div class="modal" id="document-modal">
             <div class="modal-overlay"></div>
