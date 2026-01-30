@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, query, orderBy, limit, where } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 
 // Import centralized config
 import { CONFIG, TOTAL_APARTMENTS, MONTHS, MONTHS_SHORT, CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS } from './app.config.js';
@@ -18,6 +19,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 // Collection References
 const COLLECTIONS = {
@@ -28,7 +30,8 @@ const COLLECTIONS = {
     MAINTENANCE: 'maintenance',
     TASKS: 'tasks',
     DUES: 'dues',
-    SETTINGS: 'settings'
+    SETTINGS: 'settings',
+    DOCUMENTS: 'documents'
 };
 
 // App Configuration - backward compatibility wrapper
@@ -40,10 +43,12 @@ const APP_CONFIG = {
 };
 
 export {
-    app, db, auth,
+    app, db, auth, storage,
     collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc,
     query, orderBy, limit, where,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    // Storage exports
+    ref, uploadBytes, getDownloadURL, deleteObject, listAll,
     COLLECTIONS,
     APP_CONFIG,
     // Re-export from app.config.js for convenience

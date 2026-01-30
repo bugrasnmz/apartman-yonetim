@@ -207,6 +207,15 @@
                             </svg></span>
                         <span>Daireler</span>
                     </a>
+                    <a href="#" class="nav-link" data-section="documents">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg></span>
+                        <span>Dökümanlar</span>
+                    </a>
                     <!-- Sidebar Footer - Theme & Logout -->
                     <div class="sidebar-footer">
                         <button class="theme-toggle sidebar-theme-toggle" id="theme-toggle" aria-label="Tema değiştir">
@@ -596,6 +605,68 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Documents Section (NEW) -->
+                <section id="documents-section" class="section">
+                    <div class="section-header">
+                        <h2>Döküman Yönetimi</h2>
+                        <button class="btn btn-primary" id="add-document-btn">
+                            <span>+ Döküman Yükle</span>
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">📁</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Döküman</span>
+                                <span class="stat-card-value" id="total-documents">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">📊</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Mali Dökümanlar</span>
+                                <span class="stat-card-value" id="financial-documents">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">⚖️</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Yasal Dökümanlar</span>
+                                <span class="stat-card-value" id="legal-documents">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>📂 Kategori:</label>
+                            <select id="document-category-filter">
+                                <option value="all">Tümü</option>
+                                <option value="financial">Mali Tablolar</option>
+                                <option value="legal">Yasal Dökümanlar</option>
+                                <option value="maintenance">Bakım Raporları</option>
+                                <option value="meeting">Toplantı Tutanakları</option>
+                                <option value="insurance">Sigorta Poliçeleri</option>
+                                <option value="general">Genel</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>🔍 Ara:</label>
+                            <input type="text" id="document-search" placeholder="Döküman ara..." class="search-input">
+                        </div>
+                    </div>
+
+                    <!-- Documents List -->
+                    <div class="transactions-container">
+                        <div id="documents-list" class="transactions-list">
+                            <p class="empty-state">Henüz döküman yüklenmemiş</p>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
 
@@ -642,6 +713,15 @@
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                             </svg></span>
                         <span>Kararlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="resident-documents">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg></span>
+                        <span>Dökümanlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="resident-profile">
                         <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -826,6 +906,34 @@
                     </div>
                 </section>
 
+                <!-- Resident Documents -->
+                <section id="resident-documents-section" class="section">
+                    <div class="section-header">
+                        <h2>📁 Dökümanlar</h2>
+                        <p>Apartman ile ilgili dökümanlar</p>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>📂 Kategori:</label>
+                            <select id="resident-document-category-filter">
+                                <option value="all">Tümü</option>
+                                <option value="financial">Mali Tablolar</option>
+                                <option value="legal">Yasal Dökümanlar</option>
+                                <option value="maintenance">Bakım Raporları</option>
+                                <option value="meeting">Toplantı Tutanakları</option>
+                                <option value="insurance">Sigorta Poliçeleri</option>
+                                <option value="general">Genel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="resident-documents-list" class="documents-grid">
+                        <p class="empty-state">Henüz döküman yüklenmemiş</p>
+                    </div>
+                </section>
+
                 <!-- Resident Profile -->
                 <section id="resident-profile-section" class="section">
                     <div class="section-header">
@@ -940,6 +1048,65 @@
         </div>
 
         <!-- Modals -->
+        <!-- Document Upload Modal -->
+        <div class="modal" id="document-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="document-modal-title">Döküman Yükle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="document-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="document-title">Döküman Adı *</label>
+                        <input type="text" id="document-title" placeholder="Örn: 2026 Yıllık Bütçe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-category">Kategori *</label>
+                        <select id="document-category" required>
+                            <option value="financial">💰 Mali Tablolar</option>
+                            <option value="legal">⚖️ Yasal Dökümanlar</option>
+                            <option value="maintenance">🔧 Bakım Raporları</option>
+                            <option value="meeting">📋 Toplantı Tutanakları</option>
+                            <option value="insurance">🛡️ Sigorta Poliçeleri</option>
+                            <option value="general">📁 Genel</option>
+                            <option value="other">📄 Diğer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-file">Dosya Seç *</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="document-file"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" required>
+                            <div class="file-upload-label">
+                                <span class="upload-icon">📤</span>
+                                <span class="upload-text">Dosya seçin veya sürükleyin</span>
+                                <span class="upload-hint">PDF, Word, Excel veya Görsel (max 10MB)</span>
+                            </div>
+                        </div>
+                        <div id="document-file-preview" class="file-preview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-description">Açıklama</label>
+                        <textarea id="document-description" placeholder="Döküman hakkında kısa açıklama..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="document-public" checked>
+                            <span>Tüm sakinler görebilsin</span>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Yükle</span>
+                            <span class="btn-loading" style="display: none;">Yükleniyor...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Add Bill Modal -->
         <div class="modal" id="bill-modal">
             <div class="modal-overlay"></div>
