@@ -1,52 +1,228 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Apartments - everyone can read, write requires auth or password match
+    
+    // =========================================
+    // Helper Functions
+    // =========================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is admin (custom claim)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    // Validate data is not empty
+    function isValidString(value) {
+      return value is string && value.size > 0 && value.size < 5000;
+    }
+    
+    // Validate number is positive
+    function isPositiveNumber(value) {
+      return value is number && value >= 0;
+    }
+    
+    // Rate limiting helper (basic implementation)
+    function withinWriteLimit() {
+      // In production, consider using Firebase Extensions for rate limiting
+      return true;
+    }
+    
+    // =========================================
+    // Apartments Collection
+    // =========================================
     match /apartments/{apartmentId} {
-      allow read, write: if true;
-    }
-    
-    // Bills, Transactions, Maintenance, Tasks, Dues - read for all, write for authenticated
-    match /bills/{docId} {
+      // Anyone can read apartment basic info (for login selection)
       allow read: if true;
-      allow write: if request.auth != null;
+      
+      // Only admins can create/update/delete
+      allow create: if isAdmin() && 
+        request.resource.data.keys().hasAll(['number', 'status']) &&
+        isValidString(request.resource.data.residentName) &&
+        isValidString(request.resource.data.status);
+        
+      allow update: if isAdmin() &&
+        withinWriteLimit() &&
+        (
+          // Admin can update any field
+          true
+        );
+        
+      allow delete: if isAdmin();
     }
     
-    match /transactions/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Bills Collection
+    // =========================================
+    match /bills/{billId} {
+      // Authenticated users can read
+      allow read: if isAuthenticated();
+      
+      // Only admins can write
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['type', 'amount', 'month', 'year']) &&
+        isPositiveNumber(request.resource.data.amount) &&
+        request.resource.data.type in ['electric', 'water', 'gas', 'internet', 'other'];
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
     }
     
-    match /maintenance/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Transactions Collection (Income/Expense)
+    // =========================================
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['type', 'amount', 'description', 'date', 'category']) &&
+        request.resource.data.type in ['income', 'expense'] &&
+        isPositiveNumber(request.resource.data.amount) &&
+        isValidString(request.resource.data.description);
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
     }
     
-    match /tasks/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Maintenance Collection
+    // =========================================
+    match /maintenance/{maintenanceId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'description', 'date', 'status', 'priority']) &&
+        request.resource.data.status in ['pending', 'in-progress', 'completed'] &&
+        request.resource.data.priority in ['low', 'medium', 'high'] &&
+        isValidString(request.resource.data.title);
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
     }
     
-    match /dues/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Tasks Collection
+    // =========================================
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'description', 'dueDate', 'status', 'priority']) &&
+        request.resource.data.status in ['pending', 'in_progress', 'completed'] &&
+        request.resource.data.priority in ['low', 'medium', 'high'];
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
     }
     
-    match /decisions/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Dues Collection
+    // =========================================
+    match /dues/{year} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isAdmin() && withinWriteLimit();
     }
     
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // =========================================
+    // Decisions Collection
+    // =========================================
+    match /decisions/{decisionId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'description', 'date', 'type']) &&
+        request.resource.data.type in ['normal', 'urgent'];
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
     }
     
-    // Audit Logs - append only, read requires auth
+    // =========================================
+    // Settings Collection
+    // =========================================
+    match /settings/{settingId} {
+      // Public settings readable by all authenticated
+      allow read: if isAuthenticated();
+      
+      // Only admins can modify settings
+      allow write: if isAdmin() && withinWriteLimit();
+    }
+    
+    // =========================================
+    // Documents Collection
+    // =========================================
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() && (
+        // Public documents
+        resource.data.isPublic == true ||
+        // Admin can read all
+        isAdmin() ||
+        // Apartment owner can read if allowed
+        (request.auth.token.apartmentNumber in resource.data.allowedApartments)
+      );
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'fileName', 'fileType', 'fileSize', 'fileUrl', 'category', 'uploadedBy', 'uploadedAt', 'isPublic']) &&
+        isValidString(request.resource.data.title) &&
+        request.resource.data.fileSize < 100000000; // Max 100MB
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================
+    // Admins Collection (Protected)
+    // =========================================
+    match /admins/{adminId} {
+      // Only admins can read admin list
+      allow read: if isAdmin();
+      
+      // Only existing admins can create new admins
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================
+    // Audit Logs Collection (Append-only)
+    // =========================================
     match /audit_logs/{logId} {
-      allow read: if request.auth != null;  // Only admin can read logs
-      allow create: if true;                 // Anyone can create logs
-      allow update, delete: if false;        // Logs cannot be modified or deleted
+      // Only admins can read logs
+      allow read: if isAdmin();
+      
+      // Anyone can create logs (for tracking)
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasAll(['eventType', 'timestamp', 'userId']) &&
+        request.resource.data.eventType in ['login_attempt', 'login_success', 'login_failure', 'unauthorized_access', 'data_access', 'data_modify'];
+        
+      // Logs cannot be modified or deleted
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // =========================================
+    // Notification History
+    // =========================================
+    match /notifications/{notificationId} {
+      allow read: if isAdmin();
+      
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAny(['templateType', 'message', 'recipientCount', 'successCount', 'failedCount', 'sentBy', 'sentAt']);
+        
+      allow update: if isAdmin() && withinWriteLimit();
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================
+    // Default Deny
+    // =========================================
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

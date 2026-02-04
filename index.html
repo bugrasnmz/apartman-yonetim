@@ -19,7 +19,7 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' data: blob: https:;
-        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://api.emailjs.com wss://*.firebaseio.com;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://api.emailjs.com wss://*.firebaseio.com https://api.green-api.com;
         frame-src 'self' https://*.firebaseapp.com;
         object-src 'none';
         base-uri 'self';
@@ -206,6 +206,22 @@
                                 <polyline points="9 22 9 12 15 12 15 22" />
                             </svg></span>
                         <span>Daireler</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="documents">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg></span>
+                        <span>Dökümanlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="notifications">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg></span>
+                        <span>Bildirimler</span>
                     </a>
                     <!-- Sidebar Footer - Theme & Logout -->
                     <div class="sidebar-footer">
@@ -574,7 +590,7 @@
                             <div class="stat-card-icon">🏠</div>
                             <div class="stat-card-content">
                                 <span class="stat-card-label">Toplam Daire</span>
-                                <span class="stat-card-value" id="total-apartments">12</span>
+                                <span class="stat-card-value" id="apartments-total">12</span>
                             </div>
                         </div>
                         <div class="finance-stat-card balance">
@@ -583,6 +599,38 @@
                                 <span class="stat-card-label">Dolu Daire</span>
                                 <span class="stat-card-value" id="occupied-apartments">0</span>
                             </div>
+                        </div>
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">🏡</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Ev Sahibi</span>
+                                <span class="stat-card-value" id="owner-apartments">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">🔑</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Kiracı</span>
+                                <span class="stat-card-value" id="tenant-apartments">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>🔍 Ara:</label>
+                            <input type="text" id="apartment-search" placeholder="Sakin adı ara..."
+                                class="search-input">
+                        </div>
+                        <div class="filter-group">
+                            <label>📋 Durum:</label>
+                            <select id="apartment-status-filter">
+                                <option value="all">Tümü</option>
+                                <option value="owner">Ev Sahibi</option>
+                                <option value="tenant">Kiracı</option>
+                                <option value="empty">Boş</option>
+                            </select>
                         </div>
                     </div>
 
@@ -593,6 +641,181 @@
                                 <div class="spinner"></div>
                                 <p>Daire bilgileri yükleniyor...</p>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Documents Section (NEW) -->
+                <section id="documents-section" class="section">
+                    <div class="section-header">
+                        <h2>Döküman Yönetimi</h2>
+                        <button class="btn btn-primary" id="add-document-btn">
+                            <span>+ Döküman Yükle</span>
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">📁</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Toplam Döküman</span>
+                                <span class="stat-card-value" id="total-documents">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">📊</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Mali Dökümanlar</span>
+                                <span class="stat-card-value" id="financial-documents">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">⚖️</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Yasal Dökümanlar</span>
+                                <span class="stat-card-value" id="legal-documents">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>📂 Kategori:</label>
+                            <select id="document-category-filter">
+                                <option value="all">Tümü</option>
+                                <option value="financial">Mali Tablolar</option>
+                                <option value="legal">Yasal Dökümanlar</option>
+                                <option value="maintenance">Bakım Raporları</option>
+                                <option value="meeting">Toplantı Tutanakları</option>
+                                <option value="insurance">Sigorta Poliçeleri</option>
+                                <option value="general">Genel</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>🔍 Ara:</label>
+                            <input type="text" id="document-search" placeholder="Döküman ara..." class="search-input">
+                        </div>
+                    </div>
+
+                    <!-- Documents List -->
+                    <div class="transactions-container">
+                        <div id="documents-list" class="transactions-list">
+                            <p class="empty-state">Henüz döküman yüklenmemiş</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notifications Section (NEW) -->
+                <section id="notifications-section" class="section">
+                    <div class="section-header">
+                        <h2>📱 Bildirim Yönetimi</h2>
+                        <button class="btn btn-primary" id="send-notification-btn">
+                            <span>+ Mesaj Gönder</span>
+                        </button>
+                    </div>
+
+                    <!-- GREEN-API Configuration -->
+                    <div class="transactions-container" style="margin-bottom: 24px;">
+                        <div class="config-card glass-card">
+                            <h4>⚙️ GREEN-API Yapılandırması</h4>
+                            <p class="config-info">WhatsApp bildirimleri göndermek için GREEN-API hesabı gereklidir.</p>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="greenapi-instance">Instance ID</label>
+                                    <input type="text" id="greenapi-instance" placeholder="1234567890"
+                                        autocomplete="off">
+                                </div>
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="greenapi-token">API Token</label>
+                                    <input type="password" id="greenapi-token" placeholder="xxxxxxxxxxxxxxxxxxxxxxx"
+                                        autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="form-row" style="gap: 8px; margin-top: 12px;">
+                                <button class="btn btn-secondary" id="test-greenapi-btn">🔗 Bağlantıyı Test Et</button>
+                                <button class="btn btn-primary" id="save-greenapi-btn">💾 Kaydet</button>
+                            </div>
+                            <small class="form-hint">
+                                Ücretsiz hesap için: <a href="https://console.green-api.com/auth/register"
+                                    target="_blank">GREEN-API Kayıt</a> |
+                                <a href="https://green-api.com/en/docs/before-start/" target="_blank">Kurulum
+                                    Rehberi</a>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="finance-stats-grid">
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">✅</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Gönderilen</span>
+                                <span class="stat-card-value" id="total-sent-notifications">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card balance">
+                            <div class="stat-card-icon">📱</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Kayıtlı Telefon</span>
+                                <span class="stat-card-value" id="registered-phones">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="transactions-container" style="margin-bottom: 24px;">
+                        <h4 style="margin-bottom: 16px;">⚡ Hızlı Eylemler</h4>
+                        <div class="quick-actions-grid"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                            <button class="quick-action-card" id="send-due-reminder-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    💰</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Aidat Hatırlatma</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Ödenmemiş aidatları
+                                        hatırlat</div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
+                            </button>
+                            <button class="quick-action-card" id="send-general-announcement-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    📢</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Genel Duyuru</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Tüm sakinlere mesaj
+                                        gönder</div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
+                            </button>
+                            <button class="quick-action-card" id="send-notification-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    ✍️</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Özel Mesaj</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Kendi mesajını oluştur
+                                    </div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notification History -->
+                    <div class="transactions-container">
+                        <h4>📜 Gönderim Geçmişi</h4>
+                        <div id="notifications-history" class="transactions-list">
+                            <p class="empty-state">Henüz bildirim gönderilmemiş</p>
                         </div>
                     </div>
                 </section>
@@ -642,6 +865,15 @@
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                             </svg></span>
                         <span>Kararlar</span>
+                    </a>
+                    <a href="#" class="nav-link" data-section="resident-documents">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg></span>
+                        <span>Dökümanlar</span>
                     </a>
                     <a href="#" class="nav-link" data-section="resident-profile">
                         <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -826,6 +1058,34 @@
                     </div>
                 </section>
 
+                <!-- Resident Documents -->
+                <section id="resident-documents-section" class="section">
+                    <div class="section-header">
+                        <h2>📁 Dökümanlar</h2>
+                        <p>Apartman ile ilgili dökümanlar</p>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>📂 Kategori:</label>
+                            <select id="resident-document-category-filter">
+                                <option value="all">Tümü</option>
+                                <option value="financial">Mali Tablolar</option>
+                                <option value="legal">Yasal Dökümanlar</option>
+                                <option value="maintenance">Bakım Raporları</option>
+                                <option value="meeting">Toplantı Tutanakları</option>
+                                <option value="insurance">Sigorta Poliçeleri</option>
+                                <option value="general">Genel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="resident-documents-list" class="documents-grid">
+                        <p class="empty-state">Henüz döküman yüklenmemiş</p>
+                    </div>
+                </section>
+
                 <!-- Resident Profile -->
                 <section id="resident-profile-section" class="section">
                     <div class="section-header">
@@ -940,6 +1200,148 @@
         </div>
 
         <!-- Modals -->
+        <!-- Notification Send Modal -->
+        <div class="modal" id="notification-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card modal-large">
+                <div class="modal-header">
+                    <h3 id="notification-modal-title">📱 Bildirim Gönder</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="notification-form" class="modal-form">
+                    <!-- Template Selection -->
+                    <div class="form-group">
+                        <label for="notification-template">Mesaj Şablonu</label>
+                        <select id="notification-template" required>
+                            <option value="due_reminder">💰 Aidat Hatırlatma</option>
+                            <option value="maintenance_notice">🔧 Bakım Bildirimi</option>
+                            <option value="decision_announce">📋 Karar Duyurusu</option>
+                            <option value="general_message">📢 Genel Duyuru</option>
+                            <option value="custom">✍️ Özel Mesaj</option>
+                        </select>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="form-group">
+                        <label for="notification-message">Mesaj İçeriği</label>
+                        <textarea id="notification-message" rows="6" placeholder="Mesajınızı yazın..."
+                            required></textarea>
+                        <small class="form-hint">Değişkenler: {residentName}, {apartmentNo}, {amount}, {month}</small>
+                    </div>
+
+                    <!-- Recipient Selection -->
+                    <div class="form-group">
+                        <label>Alıcılar</label>
+                        <div class="recipient-selection">
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="all" checked>
+                                <span>📢 Tüm Sakinler</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="unpaid">
+                                <span>💰 Aidat Ödemeyen</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="radio" name="recipient-type" value="custom">
+                                <span>👥 Seçili Daireler</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Custom Recipients (shown when custom is selected) -->
+                    <div class="form-group" id="custom-recipients-group" style="display: none;">
+                        <label>Daire Seçimi</label>
+                        <div class="apartment-checkboxes" id="apartment-checkboxes">
+                            <!-- Generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="form-group">
+                        <label>Önizleme</label>
+                        <div class="message-preview glass-card" id="message-preview" style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
+                            <p id="notification-preview-text" style="white-space: pre-wrap; margin: 0;">Mesaj önizlemesi burada görünecek...</p>
+                        </div>
+                    </div>
+
+                    <!-- Recipient Count -->
+                    <div class="notification-stats" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                        <div class="stat-item">
+                            <span class="label">Alıcı Sayısı:</span>
+                            <span id="recipient-count" class="value">0</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary" id="send-notification-submit">
+                            <span class="btn-text">📤 Gönder</span>
+                            <span class="btn-loading" style="display: none;">Gönderiliyor...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Document Upload Modal -->
+        <div class="modal" id="document-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3 id="document-modal-title">Döküman Yükle</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="document-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="document-title">Döküman Adı *</label>
+                        <input type="text" id="document-title" placeholder="Örn: 2026 Yıllık Bütçe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-category">Kategori *</label>
+                        <select id="document-category" required>
+                            <option value="financial">💰 Mali Tablolar</option>
+                            <option value="legal">⚖️ Yasal Dökümanlar</option>
+                            <option value="maintenance">🔧 Bakım Raporları</option>
+                            <option value="meeting">📋 Toplantı Tutanakları</option>
+                            <option value="insurance">🛡️ Sigorta Poliçeleri</option>
+                            <option value="general">📁 Genel</option>
+                            <option value="other">📄 Diğer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-file">Dosya Seç *</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="document-file"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" required>
+                            <div class="file-upload-label">
+                                <span class="upload-icon">📤</span>
+                                <span class="upload-text">Dosya seçin veya sürükleyin</span>
+                                <span class="upload-hint">PDF, Word, Excel veya Görsel (max 10MB)</span>
+                            </div>
+                        </div>
+                        <div id="document-file-preview" class="file-preview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="document-description">Açıklama</label>
+                        <textarea id="document-description" placeholder="Döküman hakkında kısa açıklama..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="document-public" checked>
+                            <span>Tüm sakinler görebilsin</span>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Yükle</span>
+                            <span class="btn-loading" style="display: none;">Yükleniyor...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Add Bill Modal -->
         <div class="modal" id="bill-modal">
             <div class="modal-overlay"></div>
@@ -1303,6 +1705,27 @@
                         <button type="submit" class="btn btn-primary">Kaydet</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Apartment Detail Modal (View Only) -->
+        <div class="modal" id="apartment-detail-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card modal-large">
+                <div class="modal-header">
+                    <h3 id="apartment-detail-title">🏠 Daire Detayı</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div id="apartment-detail-content">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+                <div class="modal-actions"
+                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); gap: 12px;">
+                    <button type="button" class="btn btn-secondary modal-close">Kapat</button>
+                    <button type="button" class="btn btn-primary" id="apartment-detail-edit-btn">✏️ Düzenle</button>
+                </div>
             </div>
         </div>
 

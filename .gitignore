@@ -22,7 +22,21 @@ node_modules/
 
 # Build Output
 dist/
-.env
-.DS_Store
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Firebase
 .firebase/
+.firebaserc
+
+# Service Account Keys (CRITICAL - NEVER COMMIT!)
+serviceAccountKey.json
+*-service-account.json
+*serviceAccount*.json
+
+# Security
+*.pem
+*.key

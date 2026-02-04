@@ -11,6 +11,11 @@ import {
 } from './firebase-config.js';
 
 import { AppState } from './modules/state.js';
+import { NotificationsService } from './features/notifications/notifications.service.js';
+import type { NotificationTemplate } from './features/notifications/notifications.types.js';
+import { DocumentsService } from './features/documents/documents.service.js';
+import type { DocumentCategory } from './features/documents/documents.types.js';
+import { AuthService } from './features/auth/auth.service.js';
 
 // Third-party imports
 import Chart from 'chart.js/auto';
@@ -294,6 +299,36 @@ async function initializeData() {
             await FirebaseService.save(COLLECTIONS.SETTINGS, 'config', AppState.settings);
         }
 
+        // Initialize Notifications Service
+        await NotificationsService.initialize();
+
+        // Initialize Documents Service
+        await DocumentsService.initialize();
+
+        // Load notification settings (GREEN-API config)
+        try {
+            const notificationSettingsDoc = await getDoc(doc(db, 'settings', 'notifications'));
+            if (notificationSettingsDoc.exists()) {
+                const notifSettings = notificationSettingsDoc.data();
+                AppState.settings.greenApiIdInstance = notifSettings.greenApiIdInstance || '';
+                AppState.settings.greenApiToken = notifSettings.greenApiToken || '';
+
+                // Populate input fields after DOM is ready
+                setTimeout(() => {
+                    const instanceInput = document.getElementById('greenapi-instance') as HTMLInputElement;
+                    const tokenInput = document.getElementById('greenapi-token') as HTMLInputElement;
+                    if (instanceInput && AppState.settings.greenApiIdInstance) {
+                        instanceInput.value = AppState.settings.greenApiIdInstance;
+                    }
+                    if (tokenInput && AppState.settings.greenApiToken) {
+                        tokenInput.value = AppState.settings.greenApiToken;
+                    }
+                }, 100);
+            }
+        } catch (e) {
+            console.warn('Could not load notification settings:', e);
+        }
+
         // Initialize dues for current year
         AppState.dues = {};
         if (currentDuesDoc.exists()) {
@@ -403,84 +438,91 @@ function refreshSection(sectionId) {
         case 'resident-overview': updateResidentDashboard(); break;
         case 'resident-bills': renderResidentBills(); break;
         case 'resident-decisions': renderResidentDecisions(); break;
+        case 'notifications': renderNotificationHistory(); break;
+        case 'documents': renderDocuments(); break;
     }
 }
 
-// ===== Authentication =====
-async function loginAdmin(password) {
-    // Admin email from centralized config
-    const email = APP_CONFIG.ADMIN_EMAIL;
-
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
-
+// ===== Authentication (Using AuthService) =====
+async function loginAdmin(password: string): Promise<boolean> {
+    const success = await AuthService.loginAdmin(password);
+    if (success) {
         showPage('admin-dashboard');
-        await initializeData(); // Load data after successful login
+        await initializeData();
         showSection('overview');
-        showToast('Hoş geldiniz, Yönetici!', 'success');
-        return true;
-    } catch (error) {
-        console.error("Login error:", error);
-        showToast('Giriş başarısız! Lütfen e-posta ve parolanızı kontrol edin.', 'error');
-        return false;
     }
+    return success;
 }
 
-function loginResident(apartmentNumber) {
-    if (apartmentNumber >= 1 && apartmentNumber <= TOTAL_APARTMENTS) {
-        AppState.currentUser = { role: 'resident', apartment: apartmentNumber };
-        // Use sessionStorage for security - data cleared when browser tab closes
-        sessionStorage.setItem(APP_CONFIG.SESSION_STORAGE_KEY, JSON.stringify(AppState.currentUser));
-        document.getElementById('resident-apartment-badge').textContent = `Daire ${apartmentNumber}`;
-        document.getElementById('resident-welcome-text').textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
+function loginResident(apartmentNumber: number): boolean {
+    const success = AuthService.loginResident(apartmentNumber);
+    if (success) {
+        document.getElementById('resident-apartment-badge')!.textContent = `Daire ${apartmentNumber}`;
+        (document.getElementById('resident-welcome-text') as HTMLElement).textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
         showPage('resident-dashboard');
         showSection('resident-overview');
-        showToast(`Hoş geldiniz, Daire ${apartmentNumber}!`, 'success');
-        return true;
     }
-    showToast('Geçersiz daire numarası!', 'error');
-    return false;
+    return success;
 }
 
-async function logout() {
-    try {
-        await signOut(auth);
-        sessionStorage.removeItem(APP_CONFIG.SESSION_STORAGE_KEY);
-        AppState.currentUser = null;
-        destroyAllCharts();
-        showPage('login-page');
-        showToast('Çıkış yapıldı', 'success');
-    } catch (error) {
-        console.error("Logout error", error);
-    }
+async function logout(): Promise<void> {
+    await AuthService.logout();
+    destroyAllCharts();
 }
 
-function checkAuth() {
-    // Listen to Firebase Auth State (Async)
-    onAuthStateChanged(auth, (user) => {
+function checkAuth(): void {
+    AuthService.checkAuth((user) => {
         if (user) {
-            // Admin is logged in
-            AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
-            // If on login page, redirect
             if (AppState.currentPage === 'login-page') {
-                showPage('admin-dashboard');
-                showSection('overview');
-            }
-        }
-        // If resident, it's client-side state, kept in memory (or re-login needed)
-        // We can check if we have a resident set manually if we want persistence
-        // For now, simpler to require re-selection for residents on refresh or use local storage for resident ID.
-        else {
-            const savedResident = sessionStorage.getItem(APP_CONFIG.SESSION_STORAGE_KEY);
-            if (savedResident) {
-                const residentData = JSON.parse(savedResident);
-                loginResident(residentData.apartment);
+                if (user.role === 'admin') {
+                    showPage('admin-dashboard');
+                    showSection('overview');
+                } else if (user.role === 'resident') {
+                    const apt = (user as any).apartment;
+                    document.getElementById('resident-apartment-badge')!.textContent = `Daire ${apt}`;
+                    (document.getElementById('resident-welcome-text') as HTMLElement).textContent = `Daire ${apt} - Apartman bilgileri ve durumu`;
+                    showPage('resident-dashboard');
+                    showSection('resident-overview');
+                }
             }
         }
     });
+}
+
+// ===== Security Helpers =====
+
+/**
+ * Verify admin access before sensitive operations
+ * Throws error if not admin
+ */
+function requireAdmin(): void {
+    if (!AuthService.isAdmin()) {
+        console.error('❌ Unauthorized access attempt');
+        showToast('Bu işlem için yönetici yetkisi gereklidir.', 'error');
+        throw new Error('Admin access required');
+    }
+}
+
+/**
+ * Verify access to apartment data
+ */
+function requireApartmentAccess(apartmentNumber: number): boolean {
+    if (AuthService.isAdmin()) return true;
+    if (AuthService.isResident() && AuthService.getResidentApartment() === apartmentNumber) {
+        return true;
+    }
+    showToast('Bu daireye erişim yetkiniz yok.', 'error');
+    return false;
+}
+
+/**
+ * Wrap async functions with admin check
+ */
+function withAdminCheck<T extends (...args: any[]) => Promise<any>>(fn: T): T {
+    return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+        requireAdmin();
+        return fn(...args);
+    }) as T;
 }
 
 
@@ -1193,59 +1235,120 @@ function editDecision(id) {
 // ===== Apartments Management (NEW) =====
 function renderApartments() {
     const container = document.getElementById('apartments-list');
+    const searchInput = document.getElementById('apartment-search') as HTMLInputElement;
+    const statusFilter = document.getElementById('apartment-status-filter') as HTMLSelectElement;
+
+    const searchTerm = searchInput?.value?.toLowerCase() || '';
+    const statusValue = statusFilter?.value || 'all';
 
     // Sort apartments by number
-    const apartments = (AppState.apartments || []).sort((a, b) => a.number - b.number);
-
-    // If empty and not initialized, we could show placeholder or initialize 12 apts
-    // But assuming we migrate data or start fresh, let's show cards for 1-12
-
-    let html = '';
+    const allApartments = (AppState.apartments || []).sort((a, b) => a.number - b.number);
 
     // Create map for easy lookup
     const aptMap = {};
-    apartments.forEach(a => aptMap[a.number] = a);
+    allApartments.forEach(a => aptMap[a.number] = a);
 
-    // Count occupied apartments (those with resident names)
-    let occupiedCount = 0;
-
+    // Build full list of 12 apartments (fill in missing ones)
+    const apartments = [];
     for (let i = 1; i <= TOTAL_APARTMENTS; i++) {
-        const apt = aptMap[i] || { number: i, residentName: '-', status: 'empty' };
+        apartments.push(aptMap[i] || { number: i, residentName: '', status: 'empty' });
+    }
 
-        // Check if apartment has a resident name (not empty, not '-', not null/undefined)
+    // Count stats
+    let occupiedCount = 0;
+    let ownerCount = 0;
+    let tenantCount = 0;
+
+    apartments.forEach(apt => {
         const hasResident = apt.residentName && apt.residentName.trim() !== '' && apt.residentName.trim() !== '-';
-        if (hasResident) {
-            occupiedCount++;
+        if (hasResident) occupiedCount++;
+        if (apt.status === 'owner') ownerCount++;
+        if (apt.status === 'tenant') tenantCount++;
+    });
+
+    // Apply filters
+    const filtered = apartments.filter(apt => {
+        // Search filter
+        if (searchTerm) {
+            const name = (apt.residentName || '').toLowerCase();
+            const owner = (apt.ownerName || '').toLowerCase();
+            const phone = (apt.phone || '').toLowerCase();
+            if (!name.includes(searchTerm) && !owner.includes(searchTerm) && !phone.includes(searchTerm)) {
+                return false;
+            }
         }
+        // Status filter
+        if (statusValue !== 'all' && apt.status !== statusValue) {
+            return false;
+        }
+        return true;
+    });
 
-        const statusClass = { 'owner': 'success', 'tenant': 'warning', 'empty': 'secondary' };
-        const statusLabel = { 'owner': 'Ev Sahibi', 'tenant': 'Kiracı', 'empty': 'Boş' };
+    const statusClass = { 'owner': 'success', 'tenant': 'warning', 'empty': 'secondary' };
+    const statusLabel = { 'owner': 'Ev Sahibi', 'tenant': 'Kiracı', 'empty': 'Boş' };
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = AppState.currentYear;
 
-        html += `
-        <div class="apartment-card glass-card">
-            <div class="apt-header">
-                <div class="apt-number">No: ${apt.number}</div>
-                <div class="apt-status badge ${statusClass[apt.status] || 'secondary'}">${statusLabel[apt.status] || apt.status}</div>
+    let html = '';
+
+    if (filtered.length === 0) {
+        html = '<p class="empty-state">Arama kriterlerine uygun daire bulunamadı</p>';
+    } else {
+        filtered.forEach(apt => {
+            // Check if due is paid for current month
+            const isDuePaid = AppState.dues[currentYear]?.[apt.number]?.[currentMonth] || false;
+            const dueStatusHtml = isDuePaid
+                ? '<span class="due-badge paid">✓ Aidat Ödendi</span>'
+                : '<span class="due-badge unpaid">✗ Aidat Ödenmedi</span>';
+
+            html += `
+            <div class="apartment-card glass-card" data-apartment="${apt.number}">
+                <div class="apt-header">
+                    <div class="apt-number">Daire ${apt.number}</div>
+                    <div class="apt-status badge ${statusClass[apt.status] || 'secondary'}">${statusLabel[apt.status] || apt.status}</div>
+                </div>
+                <div class="apt-details">
+                    <div class="apt-detail-row">
+                        <span class="apt-label">👤 Sakin:</span>
+                        <span class="apt-value">${escapeHtml(apt.residentName || '-')}</span>
+                    </div>
+                    <div class="apt-detail-row">
+                        <span class="apt-label">📞 Telefon:</span>
+                        <span class="apt-value">${escapeHtml(apt.phone || '-')}</span>
+                    </div>
+                    <div class="apt-detail-row">
+                        <span class="apt-label">✉️ E-posta:</span>
+                        <span class="apt-value apt-email">${escapeHtml(apt.email || '-')}</span>
+                    </div>
+                    <div class="apt-detail-row">
+                        <span class="apt-label">👥 Kişi:</span>
+                        <span class="apt-value">${apt.residentCount || 0}</span>
+                    </div>
+                </div>
+                <div class="apt-due-status">
+                    ${dueStatusHtml}
+                </div>
+                <div class="apt-actions">
+                    <button class="btn btn-outline btn-sm" onclick="viewApartmentDetail('${apt.id || apt.number}')">👁️ Detay</button>
+                    <button class="btn btn-secondary btn-sm" onclick="editApartment('${apt.id || apt.number}')">✏️ Düzenle</button>
+                </div>
             </div>
-            <div class="apt-details">
-                <p><strong>Sakin:</strong> ${escapeHtml(apt.residentName || '-')}</p>
-                <p><strong>Telefon:</strong> ${escapeHtml(apt.phone || '-')}</p>
-                <p><strong>Kişi:</strong> ${apt.residentCount || 0}</p>
-            </div>
-            <div class="apt-actions">
-                <button class="btn btn-secondary btn-sm btn-full" onclick="editApartment('${apt.id || i}')">Düzenle</button>
-            </div>
-        </div>
-        `;
+            `;
+        });
     }
 
     container.innerHTML = html;
 
-    // Update occupied apartments counter
+    // Update stat counters
     const occupiedEl = document.getElementById('occupied-apartments');
-    if (occupiedEl) {
-        occupiedEl.textContent = occupiedCount.toString();
-    }
+    const ownerEl = document.getElementById('owner-apartments');
+    const tenantEl = document.getElementById('tenant-apartments');
+    const totalEl = document.getElementById('apartments-total');
+
+    if (occupiedEl) occupiedEl.textContent = occupiedCount.toString();
+    if (ownerEl) ownerEl.textContent = ownerCount.toString();
+    if (tenantEl) tenantEl.textContent = tenantCount.toString();
+    if (totalEl) totalEl.textContent = TOTAL_APARTMENTS.toString();
 }
 
 function editApartment(id) {
@@ -1328,7 +1431,108 @@ async function saveApartment(data) {
     showToast('Daire bilgileri güncellendi', 'success');
 }
 
-// ===== Migration Utility =====
+// View Apartment Detail Modal
+function viewApartmentDetail(id) {
+    let apt;
+    if (AppState.apartments) {
+        apt = AppState.apartments.find(a => a.id === id || a.number == id);
+    }
+
+    if (!apt && !isNaN(id)) {
+        apt = { number: parseInt(id), residentName: '', phone: '', status: 'empty', ownerName: '', residentCount: 0 };
+    }
+
+    if (!apt) return;
+
+    const statusLabel = { 'owner': 'Ev Sahibi', 'tenant': 'Kiracı', 'empty': 'Boş' };
+    const currentYear = AppState.currentYear;
+    const currentMonth = new Date().getMonth() + 1;
+
+    // Calculate due payment status for current year
+    let paidMonths = 0;
+    let unpaidMonths = 0;
+    const duesHtml = [];
+
+    for (let month = 1; month <= 12; month++) {
+        const isPaid = AppState.dues[currentYear]?.[apt.number]?.[month] || false;
+        if (isPaid) paidMonths++;
+        else if (month <= currentMonth) unpaidMonths++;
+
+        const statusClass = isPaid ? 'paid' : (month <= currentMonth ? 'unpaid' : 'future');
+        const statusIcon = isPaid ? '✓' : (month <= currentMonth ? '✗' : '○');
+        duesHtml.push(`<span class="due-month-badge ${statusClass}" title="${MONTHS[month - 1]}">${statusIcon}</span>`);
+    }
+
+    const content = `
+        <div class="apartment-detail-grid">
+            <div class="detail-section">
+                <h4>👤 Sakin Bilgileri</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Ad Soyad:</span>
+                    <span class="detail-value">${escapeHtml(apt.residentName || '-')}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Durum:</span>
+                    <span class="detail-value badge ${apt.status === 'owner' ? 'success' : apt.status === 'tenant' ? 'warning' : 'secondary'}">${statusLabel[apt.status] || '-'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Kişi Sayısı:</span>
+                    <span class="detail-value">${apt.residentCount || 0}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Giriş Tarihi:</span>
+                    <span class="detail-value">${apt.moveInDate ? formatDate(apt.moveInDate) : '-'}</span>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>📞 İletişim Bilgileri</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Telefon:</span>
+                    <span class="detail-value">${escapeHtml(apt.phone || '-')}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">E-posta:</span>
+                    <span class="detail-value">${escapeHtml(apt.email || '-')}</span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>🏡 Mülk Sahibi</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Ad Soyad:</span>
+                    <span class="detail-value">${escapeHtml(apt.ownerName || '-')}</span>
+                </div>
+            </div>
+            
+            <div class="detail-section full-width">
+                <h4>💰 ${currentYear} Aidat Durumu</h4>
+                <div class="due-months-grid">
+                    ${duesHtml.join('')}
+                </div>
+                <div class="due-summary">
+                    <span class="due-stat paid">✓ ${paidMonths} Ödendi</span>
+                    <span class="due-stat unpaid">✗ ${unpaidMonths} Ödenmedi</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('apartment-detail-title').textContent = `🏠 Daire ${apt.number} Detayı`;
+    document.getElementById('apartment-detail-content').innerHTML = content;
+
+    // Set up edit button
+    const editBtn = document.getElementById('apartment-detail-edit-btn');
+    if (editBtn) {
+        editBtn.onclick = () => {
+            closeModal('apartment-detail-modal');
+            editApartment(apt.id || apt.number);
+        };
+    }
+
+    openModal('apartment-detail-modal');
+}
+
 async function migrateData() {
     if (!confirm("Mevcut tarayıcı verileri Firebase'e aklatılacak. Emin misiniz?")) return;
 
@@ -1866,6 +2070,7 @@ function openModal(modalId) {
     }
 
     // Show modal
+    modal.style.display = 'flex';
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 
@@ -2137,6 +2342,7 @@ function fileToBase64(file) { return new Promise((resolve, reject) => { const re
 (window as any).deleteTask = deleteTask;
 (window as any).viewTaskDetail = viewTaskDetail;
 (window as any).editApartment = editApartment; // New
+(window as any).viewApartmentDetail = viewApartmentDetail; // Apartment detail modal
 (window as any).renderBills = renderBills;
 (window as any).renderDuesTable = renderDuesTable;
 (window as any).updateMonthlyDueAmount = updateMonthlyDueAmount;
@@ -2294,7 +2500,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('transaction-type-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
     document.getElementById('transaction-year-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
 
-    // Apartment Form
+    // Apartment Filters
+    const apartmentSearch = document.getElementById('apartment-search');
+    const apartmentStatusFilter = document.getElementById('apartment-status-filter');
+    if (apartmentSearch) apartmentSearch.addEventListener('input', renderApartments);
+    if (apartmentStatusFilter) apartmentStatusFilter.addEventListener('change', renderApartments);
+
     document.getElementById('apartment-form').addEventListener('submit', async e => {
         e.preventDefault();
         const data = {
@@ -2493,11 +2704,635 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ===== Notification System (GREEN-API) =====
+    // Save GREEN-API Config
+    const saveGreenApiBtn = document.getElementById('save-greenapi-btn');
+    if (saveGreenApiBtn) {
+        saveGreenApiBtn.addEventListener('click', async () => {
+            const instanceId = (document.getElementById('greenapi-instance') as HTMLInputElement).value.trim();
+            const apiToken = (document.getElementById('greenapi-token') as HTMLInputElement).value.trim();
+
+            if (!instanceId || !apiToken) {
+                showToast('Instance ID ve API Token gerekli', 'error');
+                return;
+            }
+
+            AppState.settings.greenApiIdInstance = instanceId;
+            AppState.settings.greenApiToken = apiToken;
+
+            // Save to Firestore
+            try {
+                await setDoc(doc(db, 'settings', 'notifications'), {
+                    greenApiIdInstance: instanceId,
+                    greenApiToken: apiToken,
+                    updatedAt: new Date().toISOString()
+                });
+                showToast('GREEN-API ayarları kaydedildi', 'success');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showToast('Ayarlar kaydedilemedi', 'error');
+            }
+        });
+    }
+
+    // Test GREEN-API Connection
+    const testGreenApiBtn = document.getElementById('test-greenapi-btn');
+    if (testGreenApiBtn) {
+        testGreenApiBtn.addEventListener('click', async () => {
+            const instanceId = (document.getElementById('greenapi-instance') as HTMLInputElement).value.trim();
+            const apiToken = (document.getElementById('greenapi-token') as HTMLInputElement).value.trim();
+
+            if (!instanceId || !apiToken) {
+                showToast('Önce Instance ID ve API Token girin', 'error');
+                return;
+            }
+
+            testGreenApiBtn.textContent = '🔄 Test ediliyor...';
+            (testGreenApiBtn as HTMLButtonElement).disabled = true;
+
+            try {
+                const response = await fetch(`https://api.green-api.com/waInstance${instanceId}/getStateInstance/${apiToken}`);
+                const result = await response.json();
+
+                if (result.stateInstance === 'authorized') {
+                    showToast('✅ Bağlantı başarılı! WhatsApp bağlı.', 'success');
+                } else if (result.stateInstance === 'notAuthorized') {
+                    showToast('⚠️ WhatsApp bağlı değil. QR kod tarayın.', 'warning');
+                } else {
+                    showToast(`Durum: ${result.stateInstance || 'Bilinmiyor'}`, 'warning');
+                }
+            } catch (error: any) {
+                showToast('Bağlantı hatası: ' + error.message, 'error');
+            }
+
+            testGreenApiBtn.textContent = '🔗 Bağlantıyı Test Et';
+            (testGreenApiBtn as HTMLButtonElement).disabled = false;
+        });
+    }
+
+    // Quick Action: Send Due Reminder
+    const sendDueReminderBtn = document.getElementById('send-due-reminder-btn');
+    if (sendDueReminderBtn) {
+        sendDueReminderBtn.addEventListener('click', () => {
+            const templateSelect = document.getElementById('notification-template') as HTMLSelectElement;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+            const recipientRadio = document.querySelector('input[name="recipient-type"][value="unpaid"]') as HTMLInputElement;
+
+            if (templateSelect) templateSelect.value = 'due_reminder';
+            if (recipientRadio) recipientRadio.checked = true;
+            if (messageArea) {
+                const currentMonth = MONTHS[new Date().getMonth()];
+                messageArea.value = `Sayın {residentName},
+
+${currentMonth} ayı aidatınızın ödenmediğini hatırlatmak isteriz.
+
+Aidat Tutarı: ${AppState.settings.monthlyDueAmount || 500}₺
+
+Kolaylıklar dileriz.
+Apartman Yönetimi 🏢`;
+            }
+
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Quick Action: General Announcement
+    const sendAnnouncementBtn = document.getElementById('send-general-announcement-btn');
+    if (sendAnnouncementBtn) {
+        sendAnnouncementBtn.addEventListener('click', () => {
+            const templateSelect = document.getElementById('notification-template') as HTMLSelectElement;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+            const recipientRadio = document.querySelector('input[name="recipient-type"][value="all"]') as HTMLInputElement;
+
+            if (templateSelect) templateSelect.value = 'general_message';
+            if (recipientRadio) recipientRadio.checked = true;
+            if (messageArea) {
+                messageArea.value = `Sayın Sakinlerimiz,
+
+[Duyuru içeriğinizi buraya yazın]
+
+Apartman Yönetimi 🏢`;
+            }
+
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Send Notification Button (opens modal)
+    const sendNotificationBtn = document.getElementById('send-notification-btn');
+    if (sendNotificationBtn) {
+        sendNotificationBtn.addEventListener('click', () => {
+            openModal('notification-modal');
+            updateNotificationPreview();
+        });
+    }
+
+    // Template Change Handler
+    const templateSelect = document.getElementById('notification-template');
+    if (templateSelect) {
+        templateSelect.addEventListener('change', () => {
+            const template = (templateSelect as HTMLSelectElement).value;
+            const messageArea = document.getElementById('notification-message') as HTMLTextAreaElement;
+
+            const templates: Record<string, string> = {
+                'due_reminder': `Sayın {residentName},
+
+${MONTHS[new Date().getMonth()]} ayı aidatınızın ödenmediğini hatırlatmak isteriz.
+
+Aidat Tutarı: ${AppState.settings.monthlyDueAmount || 500}₺
+
+Kolaylıklar dileriz.
+Apartman Yönetimi 🏢`,
+                'maintenance_notice': `Sayın Sakinlerimiz,
+
+[Tarih] tarihinde [bakım türü] bakımı yapılacaktır.
+
+Detaylar: [Detaylar]
+
+Anlayışınız için teşekkür ederiz.
+Apartman Yönetimi 🏢`,
+                'decision_announce': `Sayın Sakinlerimiz,
+
+Yeni bir apartman kararı alınmıştır:
+
+📋 [Karar başlığı]
+
+Detaylar için yönetim panelini ziyaret edebilirsiniz.
+
+Apartman Yönetimi 🏢`,
+                'general_message': `Sayın Sakinlerimiz,
+
+[Mesajınızı buraya yazın]
+
+Apartman Yönetimi 🏢`,
+                'custom': ''
+            };
+
+            if (messageArea && templates[template] !== undefined) {
+                messageArea.value = templates[template];
+            }
+            updateNotificationPreview();
+        });
+    }
+
+    // Message Change Handler (update preview)
+    const notificationMessage = document.getElementById('notification-message');
+    if (notificationMessage) {
+        notificationMessage.addEventListener('input', updateNotificationPreview);
+    }
+
+    // Recipient Type Change Handler
+    const recipientRadios = document.querySelectorAll('input[name="recipient-type"]');
+    recipientRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const customGroup = document.getElementById('custom-recipients-group');
+            const selectedValue = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+
+            if (customGroup) {
+                customGroup.style.display = selectedValue === 'custom' ? 'block' : 'none';
+            }
+
+            // Populate apartment checkboxes if custom
+            if (selectedValue === 'custom') {
+                populateApartmentCheckboxes();
+            }
+
+            updateNotificationPreview();
+        });
+    });
+
+    // Notification Form Submit
+    // Notification Form Submit (Event Delegation)
+    document.addEventListener('submit', async (e) => {
+        const target = e.target as HTMLFormElement;
+        if (target && target.id === 'notification-form') {
+            e.preventDefault();
+
+            try {
+                // Get config - prioritize input fields (in case user just filled them)
+                const instanceInput = document.getElementById('greenapi-instance') as HTMLInputElement;
+                const tokenInput = document.getElementById('greenapi-token') as HTMLInputElement;
+
+                const instanceId = instanceInput?.value?.trim() || AppState.settings.greenApiIdInstance;
+                const apiToken = tokenInput?.value?.trim() || AppState.settings.greenApiToken;
+
+                if (!instanceId || !apiToken) {
+                    showToast('GREEN-API yapılandırması eksik. Lütfen Instance ID ve API Token girin.', 'error');
+                    // Focus on the configuration section
+                    const configSection = document.querySelector('.greenapi-config');
+                    if (configSection) configSection.scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
+
+                const message = (document.getElementById('notification-message') as HTMLTextAreaElement).value;
+                const recipientType = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+
+                if (!message.trim()) {
+                    showToast('Mesaj içeriği gerekli', 'error');
+                    return;
+                }
+
+                // Get recipients based on selection
+                let recipients: Array<{ apartmentNo: number, residentName: string, phoneNumber: string }> = [];
+
+                if (recipientType === 'all') {
+                    recipients = AppState.apartments
+                        .filter(apt => apt.phone && apt.phone.trim())
+                        .map(apt => ({ apartmentNo: apt.number, residentName: apt.residentName || 'Sakin', phoneNumber: apt.phone }));
+                } else if (recipientType === 'unpaid') {
+                    const currentYear = new Date().getFullYear();
+                    const currentMonth = new Date().getMonth() + 1;
+                    recipients = AppState.apartments
+                        .filter(apt => {
+                            const isPaid = AppState.dues[currentYear]?.[apt.number]?.[currentMonth];
+                            return !isPaid && apt.phone && apt.phone.trim();
+                        })
+                        .map(apt => ({ apartmentNo: apt.number, residentName: apt.residentName || 'Sakin', phoneNumber: apt.phone }));
+                } else if (recipientType === 'custom') {
+                    const checkboxes = document.querySelectorAll('#apartment-checkboxes input:checked');
+                    checkboxes.forEach(cb => {
+                        const aptNo = parseInt((cb as HTMLInputElement).value);
+                        const apt = AppState.apartments.find(a => a.number === aptNo);
+                        if (apt && apt.phone) {
+                            recipients.push({ apartmentNo: apt.number, residentName: apt.residentName || 'Sakin', phoneNumber: apt.phone });
+                        }
+                    });
+                }
+
+                if (recipients.length === 0) {
+                    showToast('Telefon numarası olan alıcı bulunamadı', 'error');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.getElementById('send-notification-submit');
+                if (submitBtn) {
+                    (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'none';
+                    (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'inline';
+                    (submitBtn as HTMLButtonElement).disabled = true;
+                }
+
+                // Send messages using NotificationsService
+                try {
+                    // Map recipients to service format
+                    const serviceRecipients = recipients.map(r => ({
+                        apartmentNo: r.apartmentNo,
+                        residentName: r.residentName,
+                        phoneNumber: r.phoneNumber,
+                        status: 'pending' as any
+                    }));
+
+                    const templateType = (document.getElementById('notification-template') as HTMLSelectElement)?.value || 'custom';
+
+                    // Use service to send bulk notifications
+                    const result = await NotificationsService.sendBulk(
+                        serviceRecipients,
+                        message,
+                        templateType as NotificationTemplate,
+                        { idInstance: instanceId, apiTokenInstance: apiToken }
+                    );
+
+                    // Update UI based on result
+                    if (result.failedCount === 0) {
+                        // Success handled by service toast
+                        (document.getElementById('notification-form') as HTMLFormElement).reset();
+                        closeModal('notification-modal');
+                        // Refresh history if current section is notifications
+                        if (AppState.currentSection === 'notifications') {
+                            renderNotificationHistory();
+                        }
+                    } else {
+                        // Partial or full failure handled by service toast
+                        if (result.successCount > 0) {
+                            (document.getElementById('notification-form') as HTMLFormElement).reset();
+                            closeModal('notification-modal');
+                            if (AppState.currentSection === 'notifications') {
+                                renderNotificationHistory();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Send error:', error);
+                    showToast('Gönderim sırasında hata oluştu', 'error');
+                } finally {
+                    // Reset button state
+                    if (submitBtn) {
+                        (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'inline';
+                        (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'none';
+                        (submitBtn as HTMLButtonElement).disabled = false;
+                    }
+                }
+            } catch (outerError) {
+                console.error('❌ Critical handler error:', outerError);
+                showToast('Beklenmeyen bir hata oluştu', 'error');
+            }
+        }
+    });
+
     // Modal Close
     document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => btn.addEventListener('click', closeAllModals));
     document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.addEventListener('click', closeAllModals));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllModals(); });
+
+    // ===== Document Management Listeners =====
+    const addDocBtn = document.getElementById('add-document-btn');
+    if (addDocBtn) {
+        addDocBtn.addEventListener('click', () => {
+            // Reset form
+            (document.getElementById('document-form') as HTMLFormElement)?.reset();
+            const preview = document.getElementById('document-file-preview');
+            if (preview) preview.innerHTML = '';
+            openModal('document-modal');
+        });
+    }
+
+    // Document File Selection Preview
+    const docFileInput = document.getElementById('document-file');
+    if (docFileInput) {
+        docFileInput.addEventListener('change', (e) => {
+            const input = e.target as HTMLInputElement;
+            const preview = document.getElementById('document-file-preview');
+            if (input.files && input.files[0] && preview) {
+                const file = input.files[0];
+                preview.innerHTML = `
+                    <div class="file-info-chip">
+                        <span>${file.name}</span>
+                        <span style="font-size: 0.8em; opacity: 0.7;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    // Document Form Submit (Event Delegation)
+    document.addEventListener('submit', async (e) => {
+        const target = e.target as HTMLFormElement;
+        if (target && target.id === 'document-form') {
+            e.preventDefault();
+            console.log('📁 Document form submitted');
+
+            const submitBtn = target.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+            try {
+                // Show loading
+                if (submitBtn) {
+                    const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
+                    const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
+                    if (btnLoading) btnLoading.style.display = 'inline';
+                    if (btnText) btnText.style.display = 'none';
+                    submitBtn.disabled = true;
+                }
+
+                const title = (document.getElementById('document-title') as HTMLInputElement).value;
+                const category = (document.getElementById('document-category') as HTMLSelectElement).value as DocumentCategory;
+                const description = (document.getElementById('document-description') as HTMLTextAreaElement).value;
+                const fileInput = document.getElementById('document-file') as HTMLInputElement;
+                const isPublic = (document.getElementById('document-public') as HTMLInputElement).checked;
+
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    showToast('Lütfen bir dosya seçin', 'error');
+                    throw new Error('No file selected');
+                }
+
+                console.log('📤 Uploading:', title, category, fileInput.files[0].name);
+
+                await DocumentsService.upload({
+                    file: fileInput.files[0],
+                    title,
+                    category,
+                    description,
+                    isPublic,
+                    allowedApartments: []
+                });
+
+                closeModal('document-modal');
+                renderDocuments();
+                showToast('Döküman başarıyla yüklendi', 'success');
+
+            } catch (error) {
+                console.error('❌ Document upload error:', error);
+                showToast('Döküman yüklenirken hata oluştu: ' + (error as any).message, 'error');
+            } finally {
+                // Reset button
+                if (submitBtn) {
+                    const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
+                    const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
+                    if (btnLoading) btnLoading.style.display = 'none';
+                    if (btnText) btnText.style.display = 'inline';
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+    });
+
+    // Document Filters
+    const docCategoryFilter = document.getElementById('document-category-filter');
+    const docSearchInput = document.getElementById('document-search');
+
+    if (docCategoryFilter) docCategoryFilter.addEventListener('change', () => renderDocuments());
+    if (docSearchInput) docSearchInput.addEventListener('input', () => renderDocuments());
+
+    // Document Delete (Event Delegation)
+    const documentsList = document.getElementById('documents-list');
+    if (documentsList) {
+        documentsList.addEventListener('click', async (e) => {
+            const target = e.target as HTMLElement;
+            const deleteBtn = target.closest('.delete-doc-btn') as HTMLElement;
+
+            if (deleteBtn) {
+                const docId = deleteBtn.dataset.id;
+                if (docId && confirm('Bu dökümanı silmek istediğinize emin misiniz?')) {
+                    const success = await DocumentsService.delete(docId);
+                    if (success) renderDocuments();
+                }
+            }
+        });
+    }
+
 });
+
+// ===== Document Management Rendering =====
+function renderDocuments() {
+    const list = document.getElementById('documents-list');
+    if (!list) return;
+
+    const categoryFilter = (document.getElementById('document-category-filter') as HTMLSelectElement)?.value || 'all';
+    const searchQuery = (document.getElementById('document-search') as HTMLInputElement)?.value || '';
+
+    let docs = AppState.currentUser.role === 'admin'
+        ? DocumentsService.getAll()
+        : DocumentsService.getPublic(); // Or getForApartment if we had that logic active
+
+    // Apply Filters
+    if (categoryFilter !== 'all') {
+        docs = docs.filter(d => d.category === categoryFilter);
+    }
+
+    if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        docs = docs.filter(d =>
+            d.title.toLowerCase().includes(q) ||
+            (d.description && d.description.toLowerCase().includes(q))
+        );
+    }
+
+    // Update Stats
+    const totalDocs = document.getElementById('total-documents');
+    const financialDocs = document.getElementById('financial-documents');
+    const legalDocs = document.getElementById('legal-documents');
+
+    if (totalDocs) totalDocs.textContent = String(DocumentsService.getStats().total);
+    if (financialDocs) financialDocs.textContent = String(DocumentsService.getStats().byCategory.financial || 0);
+    if (legalDocs) legalDocs.textContent = String(DocumentsService.getStats().byCategory.legal || 0);
+
+    // Render List
+    if (docs.length === 0) {
+        list.innerHTML = '<p class="empty-state">Döküman bulunamadı</p>';
+        return;
+    }
+
+    list.innerHTML = docs.map(doc => `
+        <div class="transaction-item document-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-color);">
+            <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                <div class="doc-icon" style="font-size: 24px; background: var(--bg-hover); padding: 8px; border-radius: 8px;">
+                    ${getDocumentIcon(doc.fileType)}
+                </div>
+                <div>
+                    <h4 style="margin: 0; font-weight: 500;">${doc.title}</h4>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                        ${new Date(doc.uploadedAt).toLocaleDateString('tr-TR')} • ${(doc.fileSize / 1024 / 1024).toFixed(2)} MB • ${getCategoryLabel(doc.category)}
+                    </div>
+                    ${doc.description ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${doc.description}</div>` : ''}
+                </div>
+            </div>
+            <div class="doc-actions" style="display: flex; gap: 8px;">
+                <a href="${doc.fileUrl}" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration: none;">
+                    ⬇️ İndir
+                </a>
+                ${AppState.currentUser.role === 'admin' ? `
+                <button class="btn btn-sm btn-danger delete-doc-btn" data-id="${doc.id}" style="padding: 6px 10px;">
+                    🗑️
+                </button>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getDocumentIcon(type: string): string {
+    switch (type) {
+        case 'pdf': return '📕';
+        case 'excel': return '📊';
+        case 'word': return '📝';
+        case 'image': return '🖼️';
+        default: return '📄';
+    }
+}
+
+function getCategoryLabel(category: string): string {
+    const labels: Record<string, string> = {
+        financial: 'Mali',
+        legal: 'Yasal',
+        maintenance: 'Bakım',
+        meeting: 'Toplantı',
+        insurance: 'Sigorta',
+        general: 'Genel',
+        other: 'Diğer'
+    };
+    return labels[category] || category;
+}
+
+// ===== Notification Helper Functions =====
+function updateNotificationPreview() {
+    const message = (document.getElementById('notification-message') as HTMLTextAreaElement)?.value || '';
+    const previewEl = document.getElementById('notification-preview-text');
+    if (previewEl) {
+        // Replace placeholders with sample values
+        const preview = message
+            .replace(/{residentName}/g, 'Örnek Sakin')
+            .replace(/{apartmentNo}/g, '1');
+        previewEl.textContent = preview || 'Mesaj önizlemesi burada görünecek';
+    }
+
+    // Update recipient count
+    const recipientType = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
+    const countEl = document.getElementById('recipient-count');
+
+    if (countEl && recipientType) {
+        let count = 0;
+        if (recipientType === 'all') {
+            count = AppState.apartments.filter(apt => apt.phone?.trim()).length;
+        } else if (recipientType === 'unpaid') {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            count = AppState.apartments.filter(apt => {
+                const isPaid = AppState.dues[currentYear]?.[apt.number]?.[currentMonth];
+                return !isPaid && apt.phone?.trim();
+            }).length;
+        } else if (recipientType === 'custom') {
+            count = document.querySelectorAll('#apartment-checkboxes input:checked').length;
+        }
+        countEl.textContent = String(count);
+    }
+}
+
+function populateApartmentCheckboxes() {
+    const container = document.getElementById('apartment-checkboxes');
+    if (!container) return;
+
+    container.innerHTML = AppState.apartments.map(apt => `
+        <label class="checkbox-item ${!apt.phone?.trim() ? 'disabled' : ''}">
+            <input type="checkbox" value="${apt.number}" ${!apt.phone?.trim() ? 'disabled' : ''}>
+            <span>Daire ${apt.number} - ${apt.residentName || 'Boş'} ${!apt.phone?.trim() ? '(Tel. yok)' : ''}</span>
+        </label>
+    `).join('');
+
+    // Add change listeners
+    container.querySelectorAll('input').forEach(cb => {
+        cb.addEventListener('change', updateNotificationPreview);
+    });
+}
+
+// Render Notification History
+function renderNotificationHistory() {
+    const list = document.getElementById('notifications-history');
+    if (!list) return;
+
+    const history = NotificationsService.getHistory();
+
+    if (history.length === 0) {
+        list.innerHTML = '<p class="empty-state">Henüz bildirim gönderilmemiş</p>';
+        return;
+    }
+
+    list.innerHTML = history.map(item => `
+        <div class="transaction-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-color);">
+            <div style="flex: 1;">
+                <div style="font-weight: 500;">
+                    ${item.templateType === 'due_reminder' ? '💰 Aidat Hatırlatma' :
+            item.templateType === 'general_message' ? '📢 Genel Duyuru' :
+                item.templateType === 'maintenance_notice' ? '🔧 Bakım Bildirimi' : '💬 Özel Mesaj'}
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                    ${new Date(item.sentAt).toLocaleString('tr-TR')} • ${item.recipientCount} Alıcı
+                </div>
+                <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                    ${item.message.substring(0, 50)}${item.message.length > 50 ? '...' : ''}
+                </div>
+            </div>
+            <div class="status-badge ${item.failedCount === 0 ? 'status-paid' : 'status-unpaid'}" style="margin-left: 12px;">
+                ${item.successCount} Başarılı / ${item.failedCount} Hata
+            </div>
+        </div>
+    `).join('');
+
+    // Update total stats
+    const totalSent = history.reduce((acc, curr) => acc + curr.successCount, 0);
+    const totalSentEl = document.getElementById('total-notifications-sent');
+    if (totalSentEl) totalSentEl.textContent = String(totalSent);
+}
 
 // ===== Scroll-Triggered Reveal Animations =====
 function initScrollReveal() {

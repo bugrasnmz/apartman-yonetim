@@ -2172,6 +2172,220 @@ tbody tr:hover {
 
 .apt-actions {
     margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Enhanced Apartment Card Detail Rows */
+.apt-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.apt-detail-row:last-child {
+    border-bottom: none;
+}
+
+.apt-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.apt-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.apt-email {
+    font-size: 11px;
+    word-break: break-all;
+}
+
+/* Due Status Badge on Card */
+.apt-due-status {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.due-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.due-badge.paid {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.due-badge.unpaid {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+/* Button Outline Variant */
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    background: var(--bg-main);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Apartment Detail Modal */
+.apartment-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.detail-section {
+    background: var(--bg-main);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+}
+
+.detail-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.detail-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Due Months Grid */
+.due-months-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.due-month-badge {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: default;
+}
+
+.due-month-badge.paid {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.due-month-badge.unpaid {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.due-month-badge.future {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+}
+
+.due-summary {
+    display: flex;
+    gap: 16px;
+}
+
+.due-stat {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.due-stat.paid {
+    color: var(--success);
+}
+
+.due-stat.unpaid {
+    color: var(--danger);
+}
+
+/* Search Input */
+.search-input {
+    padding: 10px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 14px;
+    min-width: 200px;
+    transition: all var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-bg);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Modal Large Variant */
+.modal-large {
+    max-width: 700px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Responsive for Detail Modal */
+@media (max-width: 640px) {
+    .apartment-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .due-months-grid {
+        justify-content: center;
+    }
 }
 
 /* ===== Charts ===== */
@@ -4128,4 +4342,18 @@ tbody tr:hover {
     width: 20px;
     height: 20px;
     margin-right: 8px;
+}
+
+/* ===== Quick Action Cards ===== */
+.quick-action-card {
+    transform: translateY(0);
+}
+
+.quick-action-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25) !important;
+}
+
+.quick-action-card:active {
+    transform: translateY(-2px) scale(1.01);
 }
