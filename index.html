@@ -19,7 +19,7 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' data: blob: https:;
-        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://api.emailjs.com wss://*.firebaseio.com;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://api.emailjs.com wss://*.firebaseio.com https://api.green-api.com;
         frame-src 'self' https://*.firebaseapp.com;
         object-src 'none';
         base-uri 'self';
@@ -1259,84 +1259,12 @@
                     <!-- Preview -->
                     <div class="form-group">
                         <label>Önizleme</label>
-                        <div class="message-preview" id="message-preview">
-                            <p class="preview-text">Mesaj önizlemesi burada görünecek...</p>
+                        <div class="message-preview glass-card" id="message-preview" style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
+                            <p id="notification-preview-text" style="white-space: pre-wrap; margin: 0;">Mesaj önizlemesi burada görünecek...</p>
                         </div>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
-                        <button type="submit" class="btn btn-primary" id="send-notification-submit">
-                            <span class="btn-text">📤 Gönder</span>
-                            <span class="btn-loading" style="display: none;">Gönderiliyor...</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Notification Send Modal -->
-        <div class="modal" id="notification-modal">
-            <div class="modal-overlay"></div>
-            <div class="modal-content glass-card modal-lg">
-                <div class="modal-header">
-                    <h3>📱 WhatsApp Bildirim Gönder</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <form id="notification-form" class="modal-form">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="notification-template">📝 Şablon Seç</label>
-                            <select id="notification-template">
-                                <option value="due_reminder">💰 Aidat Hatırlatma</option>
-                                <option value="maintenance_notice">🔧 Bakım Bildirimi</option>
-                                <option value="decision_announce">📋 Karar Duyurusu</option>
-                                <option value="general_message">📢 Genel Duyuru</option>
-                                <option value="custom">✍️ Özel Mesaj</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>👥 Alıcılar</label>
-                        <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" name="recipient-type" value="all" checked>
-                                <span>Tüm Sakinler</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="recipient-type" value="unpaid">
-                                <span>Ödeme Yapmayanlar</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="recipient-type" value="custom">
-                                <span>Seçili Daireler</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="custom-recipients-group" style="display: none;">
-                        <label>🏠 Daire Seç</label>
-                        <div id="apartment-checkboxes" class="checkbox-grid">
-                            <!-- Dynamically populated -->
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="notification-message">💬 Mesaj İçeriği</label>
-                        <textarea id="notification-message" rows="8" placeholder="Mesajınızı yazın..."></textarea>
-                        <small class="form-hint">Değişkenler: {residentName}, {apartmentNo}</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label>👁️ Önizleme</label>
-                        <div class="preview-box glass-card"
-                            style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
-                            <p id="notification-preview-text" style="white-space: pre-wrap; margin: 0;">Mesaj önizlemesi
-                                burada görünecek</p>
-                        </div>
-                    </div>
-
+                    <!-- Recipient Count -->
                     <div class="notification-stats" style="display: flex; gap: 16px; margin-bottom: 16px;">
                         <div class="stat-item">
                             <span class="label">Alıcı Sayısı:</span>
@@ -1348,7 +1276,7 @@
                         <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
                         <button type="submit" class="btn btn-primary" id="send-notification-submit">
                             <span class="btn-text">📤 Gönder</span>
-                            <span class="btn-loading" style="display: none;">⏳ Gönderiliyor...</span>
+                            <span class="btn-loading" style="display: none;">Gönderiliyor...</span>
                         </button>
                     </div>
                 </form>

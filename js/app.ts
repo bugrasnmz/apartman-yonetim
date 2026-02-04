@@ -15,6 +15,7 @@ import { NotificationsService } from './features/notifications/notifications.ser
 import type { NotificationTemplate } from './features/notifications/notifications.types.js';
 import { DocumentsService } from './features/documents/documents.service.js';
 import type { DocumentCategory } from './features/documents/documents.types.js';
+import { AuthService } from './features/auth/auth.service.js';
 
 // Third-party imports
 import Chart from 'chart.js/auto';
@@ -442,81 +443,86 @@ function refreshSection(sectionId) {
     }
 }
 
-// ===== Authentication =====
-async function loginAdmin(password) {
-    // Admin email from centralized config
-    const email = APP_CONFIG.ADMIN_EMAIL;
-
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
-
+// ===== Authentication (Using AuthService) =====
+async function loginAdmin(password: string): Promise<boolean> {
+    const success = await AuthService.loginAdmin(password);
+    if (success) {
         showPage('admin-dashboard');
-        await initializeData(); // Load data after successful login
+        await initializeData();
         showSection('overview');
-        showToast('Hoş geldiniz, Yönetici!', 'success');
-        return true;
-    } catch (error) {
-        console.error("Login error:", error);
-        showToast('Giriş başarısız! Lütfen e-posta ve parolanızı kontrol edin.', 'error');
-        return false;
     }
+    return success;
 }
 
-function loginResident(apartmentNumber) {
-    if (apartmentNumber >= 1 && apartmentNumber <= TOTAL_APARTMENTS) {
-        AppState.currentUser = { role: 'resident', apartment: apartmentNumber };
-        // Use sessionStorage for security - data cleared when browser tab closes
-        sessionStorage.setItem(APP_CONFIG.SESSION_STORAGE_KEY, JSON.stringify(AppState.currentUser));
-        document.getElementById('resident-apartment-badge').textContent = `Daire ${apartmentNumber}`;
-        document.getElementById('resident-welcome-text').textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
+function loginResident(apartmentNumber: number): boolean {
+    const success = AuthService.loginResident(apartmentNumber);
+    if (success) {
+        document.getElementById('resident-apartment-badge')!.textContent = `Daire ${apartmentNumber}`;
+        (document.getElementById('resident-welcome-text') as HTMLElement).textContent = `Daire ${apartmentNumber} - Apartman bilgileri ve durumu`;
         showPage('resident-dashboard');
         showSection('resident-overview');
-        showToast(`Hoş geldiniz, Daire ${apartmentNumber}!`, 'success');
-        return true;
     }
-    showToast('Geçersiz daire numarası!', 'error');
-    return false;
+    return success;
 }
 
-async function logout() {
-    try {
-        await signOut(auth);
-        sessionStorage.removeItem(APP_CONFIG.SESSION_STORAGE_KEY);
-        AppState.currentUser = null;
-        destroyAllCharts();
-        showPage('login-page');
-        showToast('Çıkış yapıldı', 'success');
-    } catch (error) {
-        console.error("Logout error", error);
-    }
+async function logout(): Promise<void> {
+    await AuthService.logout();
+    destroyAllCharts();
 }
 
-function checkAuth() {
-    // Listen to Firebase Auth State (Async)
-    onAuthStateChanged(auth, (user) => {
+function checkAuth(): void {
+    AuthService.checkAuth((user) => {
         if (user) {
-            // Admin is logged in
-            AppState.currentUser = { role: 'admin', uid: user.uid, email: user.email };
-            // If on login page, redirect
             if (AppState.currentPage === 'login-page') {
-                showPage('admin-dashboard');
-                showSection('overview');
-            }
-        }
-        // If resident, it's client-side state, kept in memory (or re-login needed)
-        // We can check if we have a resident set manually if we want persistence
-        // For now, simpler to require re-selection for residents on refresh or use local storage for resident ID.
-        else {
-            const savedResident = sessionStorage.getItem(APP_CONFIG.SESSION_STORAGE_KEY);
-            if (savedResident) {
-                const residentData = JSON.parse(savedResident);
-                loginResident(residentData.apartment);
+                if (user.role === 'admin') {
+                    showPage('admin-dashboard');
+                    showSection('overview');
+                } else if (user.role === 'resident') {
+                    const apt = (user as any).apartment;
+                    document.getElementById('resident-apartment-badge')!.textContent = `Daire ${apt}`;
+                    (document.getElementById('resident-welcome-text') as HTMLElement).textContent = `Daire ${apt} - Apartman bilgileri ve durumu`;
+                    showPage('resident-dashboard');
+                    showSection('resident-overview');
+                }
             }
         }
     });
+}
+
+// ===== Security Helpers =====
+
+/**
+ * Verify admin access before sensitive operations
+ * Throws error if not admin
+ */
+function requireAdmin(): void {
+    if (!AuthService.isAdmin()) {
+        console.error('❌ Unauthorized access attempt');
+        showToast('Bu işlem için yönetici yetkisi gereklidir.', 'error');
+        throw new Error('Admin access required');
+    }
+}
+
+/**
+ * Verify access to apartment data
+ */
+function requireApartmentAccess(apartmentNumber: number): boolean {
+    if (AuthService.isAdmin()) return true;
+    if (AuthService.isResident() && AuthService.getResidentApartment() === apartmentNumber) {
+        return true;
+    }
+    showToast('Bu daireye erişim yetkiniz yok.', 'error');
+    return false;
+}
+
+/**
+ * Wrap async functions with admin check
+ */
+function withAdminCheck<T extends (...args: any[]) => Promise<any>>(fn: T): T {
+    return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+        requireAdmin();
+        return fn(...args);
+    }) as T;
 }
 
 
