@@ -202,11 +202,11 @@ export const NotificationsService = {
      */
     getRecipients(): NotificationRecipient[] {
         return AppState.apartments
-            .filter(apt => apt.contactNumber && apt.contactNumber.trim() !== '')
+            .filter(apt => apt.phone && apt.phone.trim() !== '')
             .map(apt => ({
-                apartmentNo: apt.apartmentNo,
+                apartmentNo: apt.number,
                 residentName: apt.residentName,
-                phoneNumber: apt.contactNumber,
+                phoneNumber: apt.phone,
                 status: 'pending' as NotificationStatus
             }));
     },
@@ -217,14 +217,14 @@ export const NotificationsService = {
     getUnpaidDuesRecipients(year: number, month: number): NotificationRecipient[] {
         return AppState.apartments
             .filter(apt => {
-                const hasDue = !AppState.dues[year]?.[apt.apartmentNo]?.[month];
-                const hasPhone = apt.contactNumber && apt.contactNumber.trim() !== '';
+                const hasDue = !AppState.dues[year]?.[apt.number]?.[month];
+                const hasPhone = apt.phone && apt.phone.trim() !== '';
                 return hasDue && hasPhone;
             })
             .map(apt => ({
-                apartmentNo: apt.apartmentNo,
+                apartmentNo: apt.number,
                 residentName: apt.residentName,
-                phoneNumber: apt.contactNumber,
+                phoneNumber: apt.phone,
                 status: 'pending' as NotificationStatus
             }));
     },

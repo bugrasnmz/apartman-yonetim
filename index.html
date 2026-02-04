@@ -590,7 +590,7 @@
                             <div class="stat-card-icon">🏠</div>
                             <div class="stat-card-content">
                                 <span class="stat-card-label">Toplam Daire</span>
-                                <span class="stat-card-value" id="total-apartments">12</span>
+                                <span class="stat-card-value" id="apartments-total">12</span>
                             </div>
                         </div>
                         <div class="finance-stat-card balance">
@@ -599,6 +599,38 @@
                                 <span class="stat-card-label">Dolu Daire</span>
                                 <span class="stat-card-value" id="occupied-apartments">0</span>
                             </div>
+                        </div>
+                        <div class="finance-stat-card income">
+                            <div class="stat-card-icon">🏡</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Ev Sahibi</span>
+                                <span class="stat-card-value" id="owner-apartments">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-stat-card expense">
+                            <div class="stat-card-icon">🔑</div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Kiracı</span>
+                                <span class="stat-card-value" id="tenant-apartments">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter Bar -->
+                    <div class="finance-filter-bar">
+                        <div class="filter-group">
+                            <label>🔍 Ara:</label>
+                            <input type="text" id="apartment-search" placeholder="Sakin adı ara..."
+                                class="search-input">
+                        </div>
+                        <div class="filter-group">
+                            <label>📋 Durum:</label>
+                            <select id="apartment-status-filter">
+                                <option value="all">Tümü</option>
+                                <option value="owner">Ev Sahibi</option>
+                                <option value="tenant">Kiracı</option>
+                                <option value="empty">Boş</option>
+                            </select>
                         </div>
                     </div>
 
@@ -734,17 +766,47 @@
 
                     <!-- Quick Actions -->
                     <div class="transactions-container" style="margin-bottom: 24px;">
-                        <h4>⚡ Hızlı Eylemler</h4>
-                        <div class="quick-actions-grid">
-                            <button class="quick-action-btn" id="send-due-reminder-btn">
-                                <span class="action-icon">💰</span>
-                                <span class="action-text">Aidat Hatırlatma</span>
-                                <span class="action-desc">Ödenmemiş aidatları hatırlat</span>
+                        <h4 style="margin-bottom: 16px;">⚡ Hızlı Eylemler</h4>
+                        <div class="quick-actions-grid"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                            <button class="quick-action-card" id="send-due-reminder-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    💰</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Aidat Hatırlatma</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Ödenmemiş aidatları
+                                        hatırlat</div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
                             </button>
-                            <button class="quick-action-btn" id="send-general-announcement-btn">
-                                <span class="action-icon">📢</span>
-                                <span class="action-text">Genel Duyuru</span>
-                                <span class="action-desc">Tüm sakinlere mesaj gönder</span>
+                            <button class="quick-action-card" id="send-general-announcement-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    📢</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Genel Duyuru</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Tüm sakinlere mesaj
+                                        gönder</div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
+                            </button>
+                            <button class="quick-action-card" id="send-notification-btn"
+                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
+                                <div
+                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                    ✍️</div>
+                                <div style="text-align: left; flex: 1;">
+                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
+                                        Özel Mesaj</div>
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Kendi mesajını oluştur
+                                    </div>
+                                </div>
+                                <div style="color: white; font-size: 20px;">→</div>
                             </button>
                         </div>
                     </div>
@@ -1715,6 +1777,27 @@
                         <button type="submit" class="btn btn-primary">Kaydet</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Apartment Detail Modal (View Only) -->
+        <div class="modal" id="apartment-detail-modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content glass-card modal-large">
+                <div class="modal-header">
+                    <h3 id="apartment-detail-title">🏠 Daire Detayı</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div id="apartment-detail-content">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+                <div class="modal-actions"
+                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); gap: 12px;">
+                    <button type="button" class="btn btn-secondary modal-close">Kapat</button>
+                    <button type="button" class="btn btn-primary" id="apartment-detail-edit-btn">✏️ Düzenle</button>
+                </div>
             </div>
         </div>
 
