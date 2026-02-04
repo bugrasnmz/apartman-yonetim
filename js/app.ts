@@ -2374,15 +2374,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login Forms
     document.getElementById('admin-login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const btn = (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).querySelector('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="spinner-sm"></span> Giriş Yapılıyor...`;
-        btn.disabled = true;
+        const btn = (e.target as HTMLElement).querySelector('button[type="submit"]') || (e.target as HTMLElement).closest('button');
+        const originalText = btn?.innerHTML || 'Giriş Yap';
+        
+        try {
+            btn.innerHTML = `<span class="spinner-sm"></span> Giriş Yapılıyor...`;
+            btn.disabled = true;
 
-        await loginAdmin((document.getElementById('admin-password') as HTMLInputElement).value);
+            const password = (document.getElementById('admin-password') as HTMLInputElement).value;
+            const success = await loginAdmin(password);
 
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+            if (!success) {
+                showToast('Şifre hatalı veya giriş başarısız. Lütfen tekrar deneyin.', 'error');
+            }
+            // Başarılı girişte loginAdmin içinde yönlendirme yapılıyor
+        } catch (error) {
+            console.error('Login error:', error);
+            showToast('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     });
     document.getElementById('resident-login-form').addEventListener('submit', async e => {
         e.preventDefault();
