@@ -158,12 +158,12 @@ describe('BillsService', () => {
   describe('add', () => {
     it('should add bill to AppState', async () => {
       const billData = {
-        type: 'electric',
+        type: 'elektrik',
         amount: 1000,
         month: 1,
         year: 2026,
         paid: false
-      };
+      } as const;
 
       const bill = await BillsService.add(billData);
 
@@ -172,7 +172,7 @@ describe('BillsService', () => {
     });
 
     it('should generate unique ID', async () => {
-      const billData = { type: 'electric', amount: 1000, month: 1, year: 2026, paid: false };
+      const billData = { type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: false } as const;
 
       const bill1 = await BillsService.add(billData);
       const bill2 = await BillsService.add(billData);
@@ -186,7 +186,7 @@ describe('BillsService', () => {
       const before = new Date().toISOString();
       
       const bill = await BillsService.add({
-        type: 'electric',
+        type: 'elektrik',
         amount: 1000,
         month: 1,
         year: 2026,
@@ -198,7 +198,7 @@ describe('BillsService', () => {
     });
 
     it('should call FirebaseService.add', async () => {
-      const billData = { type: 'electric', amount: 1000, month: 1, year: 2026, paid: false };
+      const billData = { type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: false } as const;
 
       await BillsService.add(billData);
 
@@ -206,7 +206,7 @@ describe('BillsService', () => {
     });
 
     it('should emit BILL_ADDED event', async () => {
-      const billData = { type: 'electric', amount: 1000, month: 1, year: 2026, paid: false };
+      const billData = { type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: false } as const;
 
       const bill = await BillsService.add(billData);
 
@@ -214,7 +214,7 @@ describe('BillsService', () => {
     });
 
     it('should show success toast', async () => {
-      const billData = { type: 'electric', amount: 1000, month: 1, year: 2026, paid: false };
+      const billData = { type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: false } as const;
 
       await BillsService.add(billData);
 
@@ -222,7 +222,7 @@ describe('BillsService', () => {
     });
 
     it('should return created bill', async () => {
-      const billData = { type: 'water', amount: 500, month: 2, year: 2026, paid: true };
+      const billData = { type: 'su', amount: 500, month: 2, year: 2026, paid: true } as const;
 
       const bill = await BillsService.add(billData);
 
@@ -248,12 +248,12 @@ describe('BillsService', () => {
     });
 
     it('should merge partial updates', async () => {
-      const bill = createBillFixture({ id: 'test-123', type: 'electric', amount: 1000 });
+      const bill = createBillFixture({ id: 'test-123', type: 'elektrik', amount: 1000 });
       AppState.bills = [bill];
 
       await BillsService.update('test-123', { amount: 1500 });
 
-      expect(AppState.bills[0].type).toBe('electric');
+      expect(AppState.bills[0].type).toBe('elektrik');
       expect(AppState.bills[0].amount).toBe(1500);
     });
 
@@ -322,13 +322,13 @@ describe('BillsService', () => {
     });
 
     it('should emit BILL_DELETED event with bill data', async () => {
-      const bill = createBillFixture({ id: 'test-123', type: 'electric' });
+      const bill = createBillFixture({ id: 'test-123', type: 'elektrik' });
       AppState.bills = [bill];
 
       await BillsService.delete('test-123');
 
       expect(eventBus.emit).toHaveBeenCalledWith(EVENTS.BILL_DELETED, expect.objectContaining({
-        type: 'electric'
+        type: 'elektrik'
       }));
     });
 
@@ -363,9 +363,9 @@ describe('BillsService', () => {
 
     it('should handle multiple bill types', () => {
       AppState.bills = [
-        createBillFixture({ year: 2026, amount: 1000, type: 'electric' }),
-        createBillFixture({ year: 2026, amount: 500, type: 'water' }),
-        createBillFixture({ year: 2026, amount: 1500, type: 'gas' })
+        createBillFixture({ year: 2026, amount: 1000, type: 'elektrik' }),
+        createBillFixture({ year: 2026, amount: 500, type: 'su' }),
+        createBillFixture({ year: 2026, amount: 1500, type: 'dogalgaz' })
       ];
 
       expect(BillsService.getYearlyTotal(2026)).toBe(3000);
@@ -387,7 +387,7 @@ describe('BillsService', () => {
 
   describe('bill types', () => {
     it('should handle all bill types', () => {
-      const types = ['electric', 'water', 'gas', 'internet', 'other'];
+      const types = ['elektrik', 'su', 'dogalgaz', 'other'] as const;
       
       AppState.bills = types.map(type => 
         createBillFixture({ type, amount: 1000 })
@@ -395,7 +395,7 @@ describe('BillsService', () => {
 
       const allBills = BillsService.getAll();
 
-      expect(allBills).toHaveLength(5);
+      expect(allBills).toHaveLength(types.length);
       types.forEach(type => {
         expect(allBills.some(b => b.type === type)).toBe(true);
       });

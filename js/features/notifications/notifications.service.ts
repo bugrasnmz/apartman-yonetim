@@ -127,16 +127,11 @@ export const NotificationsService = {
             if (!response.ok) {
                 // Rate limit exceeded
                 if (response.status === 429) {
-                    if (retryCount < 3) {
-                        // Exponential backoff
-                        const delay = 1000 * Math.pow(2, retryCount);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        return this.sendMessage(phone, message, config, retryCount + 1);
-                    }
-                    return { 
-                        success: false, 
-                        error: 'Rate limit aşıldı. Lütfen daha sonra tekrar deneyin.',
-                        retryable: true 
+                    const rateLimitResult = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        error: rateLimitResult.message || 'Rate limit aşıldı. Lütfen daha sonra tekrar deneyin.',
+                        retryable: true
                     };
                 }
                 
@@ -166,7 +161,14 @@ export const NotificationsService = {
             }
         } catch (error: any) {
             // Network errors
-            if (error.name === 'TypeError' || error.message?.includes('fetch')) {
+            const errorMessage = String(error?.message || '').toLowerCase();
+            if (
+                error?.name === 'TypeError' ||
+                errorMessage.includes('fetch') ||
+                errorMessage.includes('network') ||
+                errorMessage.includes('timeout') ||
+                errorMessage.includes('failed to fetch')
+            ) {
                 return { 
                     success: false, 
                     error: 'İnternet bağlantısı yok veya sunucuya ulaşılamıyor.',
@@ -209,6 +211,7 @@ export const NotificationsService = {
 
                 // Skip if no phone number
                 if (!recipient.phoneNumber) {
+                    failedCount++;
                     return {
                         ...recipient,
                         status: 'failed' as NotificationStatus,
@@ -219,6 +222,7 @@ export const NotificationsService = {
                 // Validate phone
                 const phoneValidation = validatePhoneNumber(recipient.phoneNumber);
                 if (!phoneValidation.valid) {
+                    failedCount++;
                     return {
                         ...recipient,
                         status: 'failed' as NotificationStatus,
@@ -321,25 +325,31 @@ export const NotificationsService = {
      * FIXED: Correctly identifies unpaid dues
      */
     getUnpaidDuesRecipients(year: number, month: number): NotificationRecipient[] {
+        const duesForYear = AppState.dues[year];
+        const duesByMonth = duesForYear?.[month];
+        const hasLegacyMonthShape = duesByMonth && typeof duesByMonth === 'object' && !Array.isArray(duesByMonth);
+
         return AppState.apartments
             .filter(apt => {
                 // Check if dues data exists and is properly structured
-                const duesForYear = AppState.dues[year];
                 if (!duesForYear) {
                     // No dues data for this year - consider all as unpaid
                     const hasPhone = apt.phone && apt.phone.trim() !== '';
                     return hasPhone;
                 }
 
-                const duesForApartment = duesForYear[apt.number];
-                if (!duesForApartment) {
-                    // No dues data for this apartment - consider as unpaid
-                    const hasPhone = apt.phone && apt.phone.trim() !== '';
-                    return hasPhone;
+                let isPaid = false;
+                if (hasLegacyMonthShape) {
+                    // Legacy shape: dues[year][month][apartmentNo] = boolean
+                    isPaid = duesByMonth?.[apt.number] === true;
+                } else {
+                    // Current shape: dues[year][apartmentNo][month] = boolean
+                    const duesForApartment = duesForYear[apt.number];
+                    if (duesForApartment) {
+                        isPaid = duesForApartment[month] === true;
+                    }
                 }
 
-                // FIXED: Check if paid (true) or not (false or undefined)
-                const isPaid = duesForApartment[month] === true;
                 const hasPhone = apt.phone && apt.phone.trim() !== '';
                 
                 return !isPaid && hasPhone;

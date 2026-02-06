@@ -213,8 +213,8 @@ describe('FinancesService', () => {
 
     it('should aggregate income by category', () => {
       AppState.transactions = [
-        createTransactionFixture({ type: 'income', amount: 1000, category: 'aidat' }),
-        createTransactionFixture({ type: 'income', amount: 2000, category: 'aidat' }),
+        createTransactionFixture({ type: 'income', amount: 1000, category: 'aidat' as const }),
+        createTransactionFixture({ type: 'income', amount: 2000, category: 'aidat' as const }),
         createTransactionFixture({ type: 'income', amount: 500, category: 'kira' }),
         createTransactionFixture({ type: 'expense', amount: 300, category: 'temizlik' })
       ];
@@ -316,7 +316,7 @@ describe('FinancesService', () => {
         amount: 1000,
         description: 'Test income',
         date: '2026-01-15',
-        category: 'aidat'
+        category: 'aidat' as const
       };
 
       const transaction = await FinancesService.add(transactionData);
@@ -326,7 +326,7 @@ describe('FinancesService', () => {
     });
 
     it('should generate unique ID', async () => {
-      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' };
+      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' as const };
 
       const t1 = await FinancesService.add(transactionData);
       const t2 = await FinancesService.add(transactionData);
@@ -344,7 +344,7 @@ describe('FinancesService', () => {
         amount: 1000,
         description: 'Test',
         date: '2026-01-15',
-        category: 'aidat'
+        category: 'aidat' as const
       });
 
       expect(transaction.createdAt).toBeDefined();
@@ -352,7 +352,7 @@ describe('FinancesService', () => {
     });
 
     it('should call FirebaseService.add', async () => {
-      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' };
+      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' as const };
 
       await FinancesService.add(transactionData);
 
@@ -360,7 +360,7 @@ describe('FinancesService', () => {
     });
 
     it('should emit TRANSACTION_ADDED event', async () => {
-      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' };
+      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' as const };
 
       const transaction = await FinancesService.add(transactionData);
 
@@ -368,7 +368,7 @@ describe('FinancesService', () => {
     });
 
     it('should show success toast', async () => {
-      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' };
+      const transactionData = { type: 'income' as const, amount: 1000, description: 'Test', date: '2026-01-15', category: 'aidat' as const };
 
       await FinancesService.add(transactionData);
 

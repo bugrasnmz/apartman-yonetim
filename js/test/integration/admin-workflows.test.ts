@@ -13,19 +13,55 @@ import { AppState } from '../../modules/state.js';
 // Mock Setup
 // =========================================
 
+const firebaseMockFns = vi.hoisted(() => {
+  const signInWithEmailAndPassword = vi.fn(async (_auth: unknown, email: string, password: string) => {
+    if (password === 'correct-password') {
+      return {
+        user: {
+          uid: 'admin-123',
+          email,
+          getIdTokenResult: vi.fn().mockResolvedValue({ claims: { admin: true } })
+        }
+      };
+    }
+
+    throw { code: 'auth/invalid-credential' };
+  });
+
+  return {
+    signInWithEmailAndPassword,
+    signOut: vi.fn().mockResolvedValue({}),
+    onAuthStateChanged: vi.fn(),
+    verifyAdminRole: vi.fn().mockResolvedValue(true),
+    getUserClaims: vi.fn().mockResolvedValue({ admin: true })
+  };
+});
+
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(() => ({})),
+  getDoc: vi.fn(),
+  setDoc: vi.fn().mockResolvedValue({}),
+  updateDoc: vi.fn().mockResolvedValue({}),
+  serverTimestamp: vi.fn(() => '2026-02-06T00:00:00Z'),
+  increment: vi.fn((value: number) => ({ __increment: value }))
+}));
+
 vi.mock('../../firebase-config.js', () => ({
   auth: {
     currentUser: null,
-    onAuthStateChanged: vi.fn(),
-    signOut: vi.fn().mockResolvedValue({})
+    onAuthStateChanged: firebaseMockFns.onAuthStateChanged
   },
+  signInWithEmailAndPassword: firebaseMockFns.signInWithEmailAndPassword,
+  signOut: firebaseMockFns.signOut,
+  onAuthStateChanged: firebaseMockFns.onAuthStateChanged,
   db: {},
   COLLECTIONS: {
     TRANSACTIONS: 'transactions',
     BILLS: 'bills',
     APARTMENTS: 'apartments',
     DUES: 'dues',
-    SETTINGS: 'settings'
+    SETTINGS: 'settings',
+    ADMINS: 'admins'
   },
   APP_CONFIG: {
     ADMIN_EMAIL: 'admin@example.com',
@@ -37,8 +73,8 @@ vi.mock('../../firebase-config.js', () => ({
     }
   },
   logSecurityEvent: vi.fn(),
-  verifyAdminRole: vi.fn(),
-  getUserClaims: vi.fn()
+  verifyAdminRole: firebaseMockFns.verifyAdminRole,
+  getUserClaims: firebaseMockFns.getUserClaims
 }));
 
 vi.mock('../../shared/services/firebase.service.js', () => ({
@@ -263,7 +299,7 @@ describe('Admin Workflows', () => {
     it('should complete full bill lifecycle', async () => {
       // Add bill
       const bill = await BillsService.add({
-        type: 'electric',
+        type: 'elektrik',
         amount: 1500,
         month: 1,
         year: 2026,
@@ -285,10 +321,10 @@ describe('Admin Workflows', () => {
     });
 
     it('should calculate yearly total correctly', async () => {
-      await BillsService.add({ type: 'electric', amount: 1000, month: 1, year: 2026, paid: true });
-      await BillsService.add({ type: 'water', amount: 500, month: 1, year: 2026, paid: true });
-      await BillsService.add({ type: 'gas', amount: 1500, month: 2, year: 2026, paid: false });
-      await BillsService.add({ type: 'electric', amount: 800, month: 12, year: 2025, paid: true });
+      await BillsService.add({ type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: true });
+      await BillsService.add({ type: 'su', amount: 500, month: 1, year: 2026, paid: true });
+      await BillsService.add({ type: 'dogalgaz', amount: 1500, month: 2, year: 2026, paid: false });
+      await BillsService.add({ type: 'elektrik', amount: 800, month: 12, year: 2025, paid: true });
 
       const total2026 = BillsService.getYearlyTotal(2026);
       expect(total2026).toBe(3000);
@@ -296,9 +332,9 @@ describe('Admin Workflows', () => {
 
     it('should filter bills by year', () => {
       AppState.bills = [
-        { id: '1', type: 'electric', amount: 1000, month: 1, year: 2025, paid: true },
-        { id: '2', type: 'water', amount: 500, month: 2, year: 2026, paid: true },
-        { id: '3', type: 'gas', amount: 1500, month: 3, year: 2026, paid: false }
+        { id: '1', type: 'elektrik', amount: 1000, month: 1, year: 2025, paid: true },
+        { id: '2', type: 'su', amount: 500, month: 2, year: 2026, paid: true },
+        { id: '3', type: 'dogalgaz', amount: 1500, month: 3, year: 2026, paid: false }
       ];
 
       const bills2026 = BillsService.getByYear(2026);
@@ -309,9 +345,9 @@ describe('Admin Workflows', () => {
 
     it('should sort bills by month descending', () => {
       AppState.bills = [
-        { id: '1', type: 'electric', amount: 1000, month: 1, year: 2026, paid: true },
-        { id: '2', type: 'water', amount: 500, month: 5, year: 2026, paid: true },
-        { id: '3', type: 'gas', amount: 1500, month: 3, year: 2026, paid: false }
+        { id: '1', type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: true },
+        { id: '2', type: 'su', amount: 500, month: 5, year: 2026, paid: true },
+        { id: '3', type: 'dogalgaz', amount: 1500, month: 3, year: 2026, paid: false }
       ];
 
       const bills = BillsService.getByYear(2026);
@@ -453,7 +489,7 @@ describe('Data Integrity', () => {
 
   it('should handle concurrent modifications gracefully', async () => {
     const bill = await BillsService.add({
-      type: 'electric', amount: 1000, month: 1, year: 2026, paid: false
+      type: 'elektrik', amount: 1000, month: 1, year: 2026, paid: false
     });
 
     // Multiple updates

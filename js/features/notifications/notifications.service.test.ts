@@ -232,8 +232,8 @@ describe('NotificationsService', () => {
 
     it('should send to multiple recipients quickly', async () => {
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' },
-        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' as const },
+        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' as const }
       ];
 
       const result = await NotificationsService.sendBulk(
@@ -249,7 +249,7 @@ describe('NotificationsService', () => {
 
     it('should personalize messages with placeholders', async () => {
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' as const }
       ];
 
       await NotificationsService.sendBulk(
@@ -265,8 +265,8 @@ describe('NotificationsService', () => {
 
     it('should handle missing phone numbers', async () => {
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '', status: 'pending' },
-        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '', status: 'pending' as const },
+        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' as const }
       ];
 
       const result = await NotificationsService.sendBulk(
@@ -283,8 +283,8 @@ describe('NotificationsService', () => {
 
     it('should call progress callback', async () => {
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' },
-        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' as const },
+        { apartmentNo: 2, residentName: 'Mehmet', phoneNumber: '5552222222', status: 'pending' as const }
       ];
       const onProgress = vi.fn();
 
@@ -302,7 +302,7 @@ describe('NotificationsService', () => {
     it('should show success toast when all successful', async () => {
       const { toastSuccess } = await import('../../shared/ui/toast.js');
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' as const }
       ];
 
       await NotificationsService.sendBulk(
@@ -320,7 +320,7 @@ describe('NotificationsService', () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
       
       const recipients = [
-        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' }
+        { apartmentNo: 1, residentName: 'Ahmet', phoneNumber: '5551111111', status: 'pending' as const }
       ];
 
       await NotificationsService.sendBulk(

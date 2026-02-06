@@ -3,7 +3,7 @@
  * Global test configuration and utilities
  */
 
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // =========================================
 // Global Mocks
@@ -18,6 +18,9 @@ vi.mock('../firebase-config.js', () => ({
     signInWithEmailAndPassword: vi.fn(),
     signOut: vi.fn()
   },
+  signInWithEmailAndPassword: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChanged: vi.fn(),
   storage: {},
   collection: vi.fn(),
   doc: vi.fn(),

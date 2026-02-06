@@ -2374,8 +2374,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login Forms
     document.getElementById('admin-login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const btn = (e.target as HTMLElement).querySelector('button[type="submit"]') || (e.target as HTMLElement).closest('button');
-        const originalText = btn?.innerHTML || 'Giriş Yap';
+        const form = e.currentTarget as HTMLFormElement;
+        const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+        if (!btn) return;
+
+        const originalText = btn.innerHTML;
         
         try {
             btn.innerHTML = `<span class="spinner-sm"></span> Giriş Yapılıyor...`;

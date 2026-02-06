@@ -6,16 +6,15 @@
 import type { 
   Apartment, 
   Transaction, 
-  Bill, 
   Decision, 
   Maintenance, 
   Task,
   DueRecord,
   Document,
-  Notification,
-  AdminUser,
-  ResidentUser
+  Notification
 } from '../types.js';
+import type { Bill, BillType } from '../features/bills/bills.types.js';
+import type { AdminUser, ResidentUser } from '../features/auth/auth.types.js';
 
 // =========================================
 // ID Generators
@@ -88,14 +87,14 @@ export function createTransactionsFixture(count: number = 5): Transaction[] {
 // =========================================
 
 export function createBillFixture(overrides?: Partial<Bill>): Bill {
-  const types = ['electric', 'water', 'gas', 'internet', 'other'];
+  const types: BillType[] = ['elektrik', 'su', 'dogalgaz', 'other'];
   const type = types[Math.floor(Math.random() * types.length)];
   
   return {
     id: generateId(),
     type,
     amount: Math.floor(Math.random() * 2000) + 100,
-    month: new Date().toLocaleString('tr-TR', { month: 'long' }),
+    month: Math.floor(Math.random() * 12) + 1,
     year: 2026,
     paid: Math.random() > 0.3,
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

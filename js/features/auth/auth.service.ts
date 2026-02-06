@@ -19,7 +19,7 @@ import { AppState } from '../../modules/state.js';
 import { showPage, showSection } from '../../core/router.js';
 import { eventBus, EVENTS } from '../../core/events.js';
 import { toastSuccess, toastError } from '../../shared/ui/toast.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import type { AdminUser, ResidentUser, CurrentUser, LoginAttempt } from './auth.types.js';
 
 // Login attempt tracking (client-side only, for UI feedback)
@@ -410,11 +410,6 @@ export const AuthService = {
         return false;
     }
 };
-
-// Helper function for Firestore increment
-function increment(n: number) {
-    return { _methodName: 'FieldValue.increment', _data: n };
-}
 
 // Export convenience functions for backward compatibility
 export const loginAdmin = AuthService.loginAdmin.bind(AuthService);
