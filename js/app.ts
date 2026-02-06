@@ -406,6 +406,11 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
     AppState.currentPage = pageId;
+
+    const skipLink = document.getElementById('skip-to-main-link') as HTMLAnchorElement | null;
+    if (skipLink) {
+        skipLink.setAttribute('href', pageId === 'resident-dashboard' ? '#resident-main-content' : '#main-content');
+    }
 }
 
 function showSection(sectionId) {
@@ -421,13 +426,19 @@ function showSection(sectionId) {
         if ((link as HTMLElement).dataset.section === sectionId) link.classList.add('active');
     });
 
+    if (dashboard === 'resident-dashboard') {
+        document.querySelectorAll('#resident-tab-bar .tab-item[data-section]').forEach(tab => {
+            tab.classList.toggle('active', (tab as HTMLElement).dataset.section === sectionId);
+        });
+    }
+
     AppState.currentSection = sectionId;
     refreshSection(sectionId);
 }
 
 function refreshSection(sectionId) {
     switch (sectionId) {
-        case 'overview': updateOverviewStats(); renderUpcomingMaintenance(); renderRecentDecisions(); break;
+        case 'overview': updateOverviewStats(); updateOverviewAlerts(); renderUpcomingMaintenance(); renderRecentDecisions(); break;
         case 'finance': renderTransactions(); updateFinanceSummary(); break;
         case 'electricity': renderBills(); break;
         case 'dues': renderDuesTable(); break;
@@ -438,6 +449,8 @@ function refreshSection(sectionId) {
         case 'resident-overview': updateResidentDashboard(); break;
         case 'resident-bills': renderResidentBills(); break;
         case 'resident-decisions': renderResidentDecisions(); break;
+        case 'resident-documents': renderResidentDocuments(); break;
+        case 'resident-profile': loadResidentProfile(); break;
         case 'notifications': renderNotificationHistory(); break;
         case 'documents': renderDocuments(); break;
     }
@@ -547,6 +560,61 @@ function updateOverviewStats() {
     document.getElementById('total-balance').textContent = `₺${formatNumber(balance)}`;
 }
 
+function updateOverviewAlerts() {
+    const container = document.getElementById('overview-alerts');
+    if (!container) return;
+
+    const year = AppState.currentYear;
+    const currentMonth = new Date().getMonth() + 1;
+    let unpaidCount = 0;
+    for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
+        if (!AppState.dues[year]?.[apt]?.[currentMonth]) unpaidCount++;
+    }
+
+    const pendingTasks = AppState.tasks.filter(t => t.status !== 'completed').length;
+    const maintenanceSoon = AppState.maintenance.filter(m => {
+        if (m.status === 'completed') return false;
+        const dayDiff = Math.ceil((new Date(m.date).getTime() - Date.now()) / 86400000);
+        return dayDiff <= 14;
+    }).length;
+
+    const alerts = [
+        {
+            icon: '💰',
+            title: 'Aidat Takibi',
+            value: `${unpaidCount} daire`,
+            desc: 'Bu ay ödemesi eksik',
+            target: 'dues'
+        },
+        {
+            icon: '📋',
+            title: 'Açık İşler',
+            value: `${pendingTasks} kayıt`,
+            desc: 'Tamamlanmayı bekliyor',
+            target: 'tasks'
+        },
+        {
+            icon: '🔧',
+            title: 'Yakın Bakım',
+            value: `${maintenanceSoon} kayıt`,
+            desc: '14 gün içinde planlı',
+            target: 'maintenance'
+        }
+    ];
+
+    container.innerHTML = alerts.map(alert => `
+        <button class="overview-alert-card" type="button" data-target="${alert.target}">
+            <span class="overview-alert-icon">${alert.icon}</span>
+            <span class="overview-alert-info">
+                <strong>${alert.title}</strong>
+                <span class="overview-alert-value">${alert.value}</span>
+                <span class="overview-alert-desc">${alert.desc}</span>
+            </span>
+            <span class="overview-alert-arrow">→</span>
+        </button>
+    `).join('');
+}
+
 function renderUpcomingMaintenance() {
     const container = document.getElementById('upcoming-maintenance');
     const upcoming = AppState.maintenance
@@ -628,6 +696,15 @@ function renderTransactions() {
     const container = document.getElementById('transactions-list');
     const typeFilter = (document.getElementById('transaction-type-filter') as HTMLSelectElement).value;
     const yearFilter = parseInt((document.getElementById('transaction-year-filter') as HTMLSelectElement).value);
+    const activeFilters = document.getElementById('transaction-active-filters');
+
+    if (activeFilters) {
+        const chips = [
+            `<span class="active-filter-chip">Yıl: ${yearFilter}</span>`,
+            `<span class="active-filter-chip">Tür: ${typeFilter === 'all' ? 'Tümü' : typeFilter === 'income' ? 'Gelir' : 'Gider'}</span>`
+        ];
+        activeFilters.innerHTML = chips.join('');
+    }
 
     let filtered = AppState.transactions.filter(t => {
         const d = new Date(t.date);
@@ -637,7 +714,21 @@ function renderTransactions() {
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="empty-state">Bu kriterlere uygun kayıt bulunamadı</p>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Bu kriterlere uygun kayıt bulunamadı</p>
+                <button type="button" class="btn btn-primary btn-sm empty-action-btn" id="empty-add-transaction-btn">+ İlk Kaydı Ekle</button>
+            </div>
+        `;
+        const addButton = document.getElementById('empty-add-transaction-btn');
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                document.getElementById('transaction-modal-title').textContent = 'Gelir/Gider Ekle';
+                (document.getElementById('transaction-id') as HTMLInputElement).value = '';
+                (document.getElementById('transaction-date') as HTMLInputElement).value = new Date().toISOString().split('T')[0];
+                openModal('transaction-modal');
+            });
+        }
         return;
     }
 
@@ -728,21 +819,34 @@ function renderMaintenance() {
     }
 
     const sorted = [...AppState.maintenance].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    container.innerHTML = sorted.map(m => `
-        <div class="maintenance-card">
+    container.innerHTML = sorted.map(m => {
+        const dayDiff = Math.ceil((new Date(m.date).getTime() - Date.now()) / 86400000);
+        const urgencyClass = m.status === 'completed' ? 'completed' : dayDiff < 0 ? 'overdue' : dayDiff <= 7 ? 'urgent' : 'normal';
+        const urgencyText = m.status === 'completed'
+            ? 'Tamamlandı'
+            : dayDiff < 0
+                ? `${Math.abs(dayDiff)} gün gecikmiş`
+                : dayDiff <= 7
+                    ? `${dayDiff} gün içinde`
+                    : 'Planlı';
+
+        return `
+        <div class="maintenance-card maintenance-${urgencyClass}">
             <div class="maintenance-icon">${m.status === 'completed' ? '✅' : '🔧'}</div>
             <div class="maintenance-info">
                 <h4>${escapeHtml(m.title)}</h4>
                 <p>${escapeHtml(m.description || '-')}</p>
                 <span class="maintenance-date">📅 ${formatDate(m.date)}</span>
                 <span class="status-badge-sm ${m.status}">${STATUS_LABELS[m.status]}</span>
+                <span class="maintenance-urgency">${urgencyText}</span>
             </div>
             <div class="maintenance-actions">
                 <button class="btn btn-secondary btn-sm" onclick="editMaintenance('${m.id}')">✏️</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteMaintenance('${m.id}')">🗑</button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function addMaintenance(data) {
@@ -788,25 +892,9 @@ function editMaintenance(id) {
 // ===== Tasks Management =====
 function renderTasks() {
     const container = document.getElementById('tasks-list');
-    let filtered = AppState.tasks;
-
-    if (AppState.currentTaskFilter !== 'all') {
-        filtered = filtered.filter(t => t.status === AppState.currentTaskFilter);
-    }
-
-    if (filtered.length === 0) {
-        container.innerHTML = '<p class="empty-state">Bu filtreye uygun iş bulunamadı</p>';
-        return;
-    }
-
-    const sorted = [...filtered].sort((a, b) => {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
-
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
     const statusIcons = { pending: '⏳', in_progress: '🔄', completed: '✅' };
-
-    container.innerHTML = sorted.map(t => `
+    const renderTaskCard = (t) => `
         <div class="task-card">
             <div class="task-status-icon ${t.status}">${statusIcons[t.status]}</div>
             <div class="task-info">
@@ -822,7 +910,49 @@ function renderTasks() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+
+    if (AppState.currentTaskFilter === 'all') {
+        const groups = {
+            pending: AppState.tasks.filter(t => t.status === 'pending').sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]),
+            in_progress: AppState.tasks.filter(t => t.status === 'in_progress').sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]),
+            completed: AppState.tasks.filter(t => t.status === 'completed').sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+        };
+
+        if (AppState.tasks.length === 0) {
+            container.innerHTML = '<p class="empty-state">Henüz iş kaydı eklenmemiş</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="tasks-kanban">
+                <div class="tasks-column">
+                    <h4 class="tasks-column-title">⏳ Bekliyor <span>${groups.pending.length}</span></h4>
+                    ${groups.pending.length ? groups.pending.map(renderTaskCard).join('') : '<p class="empty-state">Kayıt yok</p>'}
+                </div>
+                <div class="tasks-column">
+                    <h4 class="tasks-column-title">🔄 Devam Ediyor <span>${groups.in_progress.length}</span></h4>
+                    ${groups.in_progress.length ? groups.in_progress.map(renderTaskCard).join('') : '<p class="empty-state">Kayıt yok</p>'}
+                </div>
+                <div class="tasks-column">
+                    <h4 class="tasks-column-title">✅ Tamamlandı <span>${groups.completed.length}</span></h4>
+                    ${groups.completed.length ? groups.completed.map(renderTaskCard).join('') : '<p class="empty-state">Kayıt yok</p>'}
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const filtered = AppState.tasks
+        .filter(t => t.status === AppState.currentTaskFilter)
+        .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="empty-state">Bu filtreye uygun iş bulunamadı</p>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(renderTaskCard).join('');
 }
 
 function addTask(data) {
@@ -919,7 +1049,22 @@ function renderBills() {
         default: 'Fatura'
     };
 
-    container.innerHTML = filtered.map(bill => `
+    const getPreviousBill = (bill) => {
+        const candidates = AppState.bills
+            .filter(b => b.type === bill.type && (b.year < bill.year || (b.year === bill.year && b.month < bill.month)))
+            .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+        return candidates[0];
+    };
+
+    container.innerHTML = filtered.map(bill => {
+        const previousBill = getPreviousBill(bill);
+        const difference = previousBill ? bill.amount - previousBill.amount : 0;
+        const trendClass = difference > 0 ? 'expense' : difference < 0 ? 'income' : 'balance';
+        const trendText = previousBill
+            ? `${difference > 0 ? '+' : ''}₺${formatNumber(Math.abs(difference))} (${MONTHS[previousBill.month - 1]} ${previousBill.year})`
+            : 'İlk kayıt';
+
+        return `
         <div class="transaction-card expense">
             <div class="transaction-icon">
                 ${billIcons[bill.type] || billIcons.default}
@@ -927,6 +1072,7 @@ function renderBills() {
             <div class="transaction-info">
                 <div class="transaction-category">${billLabels[bill.type] || billLabels.default}</div>
                 <div class="transaction-description">${bill.notes ? escapeHtml(bill.notes) : `${MONTHS[bill.month - 1]} ${bill.year}`}</div>
+                <div class="bill-trend ${trendClass}">Karşılaştırma: ${trendText}</div>
             </div>
             <div class="transaction-meta">
                 <div class="transaction-amount expense">₺${formatNumber(bill.amount)}</div>
@@ -938,7 +1084,8 @@ function renderBills() {
                 <button class="btn btn-danger btn-sm" onclick="deleteBill('${bill.id}')" title="Sil">🗑️</button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function renderResidentBills() {
@@ -951,9 +1098,10 @@ function renderResidentBills() {
     container.innerHTML = sorted.map(bill => `
         <div class="bill-card glass-card">
             <div class="bill-header">
-                <span class="bill-month">${MONTHS[bill.month - 1]}</span>
+                <span class="bill-month">${MONTHS[bill.month - 1]} ${bill.type ? `• ${CATEGORY_LABELS[bill.type] || bill.type}` : ''}</span>
                 <span class="bill-year">${bill.year}</span>
             </div>
+            ${((Date.now() - new Date(bill.year, bill.month - 1, 1).getTime()) / 86400000) <= 45 ? '<span class="resident-item-badge">Yeni</span>' : ''}
             <div class="bill-amount">₺${formatNumber(bill.amount)}</div>
             ${bill.fileData ? `<div class="bill-actions"><button class="btn btn-secondary btn-sm btn-full" onclick="viewBill('${bill.id}')">👁 Görüntüle</button></div>` : ''}
         </div>
@@ -1020,6 +1168,10 @@ function renderDuesTable() {
     const tbody = document.getElementById('dues-table-body');
     const year = (document.getElementById('dues-year-select') as HTMLSelectElement).value;
     const amount = AppState.settings.monthlyDueAmount;
+    const bulkMonthEl = document.getElementById('dues-bulk-month') as HTMLSelectElement | null;
+    const unpaidOnlyEl = document.getElementById('dues-unpaid-only') as HTMLInputElement | null;
+    const filterMonth = bulkMonthEl ? parseInt(bulkMonthEl.value) : (new Date().getMonth() + 1);
+    const unpaidOnly = unpaidOnlyEl?.checked || false;
     (document.getElementById('monthly-due-amount') as HTMLInputElement).value = amount.toString();
 
     if (!AppState.dues[year]) {
@@ -1032,7 +1184,11 @@ function renderDuesTable() {
 
     let totalPaid = 0, totalPending = 0;
     let html = '';
+    let visibleRows = 0;
     for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
+        if (unpaidOnly && AppState.dues[year]?.[apt]?.[filterMonth]) continue;
+
+        visibleRows++;
         html += `<tr><td>Daire ${apt}</td>`;
         for (let month = 1; month <= 12; month++) {
             const isPaid = AppState.dues[year]?.[apt]?.[month] || false;
@@ -1040,6 +1196,9 @@ function renderDuesTable() {
             html += `<td><button class="due-toggle ${isPaid ? 'paid' : 'unpaid'}" onclick="toggleDue(${year}, ${apt}, ${month})">${isPaid ? '✓' : '✗'}</button></td>`;
         }
         html += '</tr>';
+    }
+    if (visibleRows === 0) {
+        html = '<tr><td colspan="13"><p class="empty-state">Seçilen filtreye uygun borçlu daire yok.</p></td></tr>';
     }
     tbody.innerHTML = html;
     document.getElementById('total-collected').textContent = `₺${formatNumber(totalPaid)}`;
@@ -1066,6 +1225,27 @@ async function toggleDue(year, apartment, month) {
 
     renderDuesTable();
     showToast(`Daire ${apartment} - ${MONTHS[month - 1]} ${isNowPaid ? 'ödendi' : 'ödenmedi'}`, 'success');
+}
+
+async function setDueStatusForMonth(isPaid) {
+    const year = parseInt((document.getElementById('dues-year-select') as HTMLSelectElement).value);
+    const month = parseInt((document.getElementById('dues-bulk-month') as HTMLSelectElement).value);
+
+    if (!AppState.dues[year]) AppState.dues[year] = {};
+    for (let apt = 1; apt <= TOTAL_APARTMENTS; apt++) {
+        if (!AppState.dues[year][apt]) AppState.dues[year][apt] = {};
+        AppState.dues[year][apt][month] = isPaid;
+    }
+
+    try {
+        await FirebaseService.save(COLLECTIONS.DUES, year.toString(), AppState.dues[year]);
+        await syncAidatTransaction(year, month);
+    } catch (error) {
+        console.error('Toplu aidat güncelleme hatası:', error);
+    }
+
+    renderDuesTable();
+    showToast(`${MONTHS[month - 1]} ayı tüm daireler için ${isPaid ? 'ödendi' : 'ödenmedi'} olarak güncellendi`, 'success');
 }
 
 // Sync aidat payments with transactions table
@@ -1147,11 +1327,30 @@ function renderDecisions() {
         return;
     }
     const sorted = [...AppState.decisions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    container.innerHTML = sorted.map(d => `
+    const featured = sorted[0];
+    const rest = sorted.slice(1);
+
+    container.innerHTML = `
+        <div class="featured-decision-card">
+            <div class="featured-decision-header">
+                <span class="badge primary">Öne Çıkan Karar</span>
+                <span class="transaction-date">📅 ${formatDate(featured.date)}</span>
+            </div>
+            <h4>${escapeHtml(featured.title)}</h4>
+            <p>${escapeHtml(featured.content).substring(0, 220)}${featured.content.length > 220 ? '...' : ''}</p>
+            <div class="transaction-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editDecision('${featured.id}')" title="Düzenle">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteDecision('${featured.id}')" title="Sil">🗑️</button>
+            </div>
+        </div>
+        ${rest.map(d => `
         <div class="transaction-card income">
             <div class="transaction-icon">📋</div>
             <div class="transaction-info">
-                <div class="transaction-category">${escapeHtml(d.title)}</div>
+                <div class="transaction-category">
+                    ${escapeHtml(d.title)}
+                    <span class="decision-tag">${getDecisionTag(d.title, d.content)}</span>
+                </div>
                 <div class="transaction-description">${escapeHtml(d.content).substring(0, 100)}${d.content.length > 100 ? '...' : ''}</div>
             </div>
             <div class="transaction-meta">
@@ -1162,7 +1361,17 @@ function renderDecisions() {
                 <button class="btn btn-danger btn-sm" onclick="deleteDecision('${d.id}')" title="Sil">🗑️</button>
             </div>
         </div>
-    `).join('');
+        `).join('')}
+    `;
+}
+
+function getDecisionTag(title, content) {
+    const text = `${title} ${content}`.toLowerCase();
+    if (text.includes('bakım') || text.includes('onarım') || text.includes('asansör')) return 'Bakım';
+    if (text.includes('aidat') || text.includes('ödeme') || text.includes('bütçe')) return 'Finans';
+    if (text.includes('güvenlik') || text.includes('kamera') || text.includes('kapı')) return 'Güvenlik';
+    if (text.includes('toplantı') || text.includes('oy') || text.includes('karar')) return 'Yönetim';
+    return 'Genel';
 }
 
 function renderRecentDecisions() {
@@ -1188,7 +1397,39 @@ function renderResidentDecisions() {
                 <h3 class="decision-title">${escapeHtml(d.title)}</h3>
                 <span class="decision-date">📅 ${formatDate(d.date)}</span>
             </div>
+            ${((Date.now() - new Date(d.date).getTime()) / 86400000) <= 14 ? '<span class="resident-item-badge">Yeni</span>' : ''}
             <p class="decision-content">${escapeHtml(d.content)}</p>
+        </div>
+    `).join('');
+}
+
+function renderResidentDocuments() {
+    const list = document.getElementById('resident-documents-list');
+    if (!list) return;
+
+    const categoryFilter = (document.getElementById('resident-document-category-filter') as HTMLSelectElement)?.value || 'all';
+    let docs = DocumentsService.getPublic();
+
+    if (categoryFilter !== 'all') {
+        docs = docs.filter(d => d.category === categoryFilter);
+    }
+
+    if (docs.length === 0) {
+        list.innerHTML = '<p class="empty-state">Henüz döküman yüklenmemiş</p>';
+        return;
+    }
+
+    list.innerHTML = docs.map(doc => `
+        <div class="bill-card glass-card">
+            <div class="bill-header">
+                <span class="bill-month">${getDocumentIcon(doc.fileType)} ${doc.title}</span>
+                <span class="bill-year">${new Date(doc.uploadedAt).toLocaleDateString('tr-TR')}</span>
+            </div>
+            ${((Date.now() - new Date(doc.uploadedAt).getTime()) / 86400000) <= 14 ? '<span class="resident-item-badge">Yeni</span>' : ''}
+            <p class="transaction-description">${getCategoryLabel(doc.category)} • ${(doc.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+            <div class="bill-actions">
+                <a href="${doc.fileUrl}" target="_blank" class="btn btn-secondary btn-sm btn-full document-download-link">⬇️ İndir</a>
+            </div>
         </div>
     `).join('');
 }
@@ -1300,6 +1541,12 @@ function renderApartments() {
             const dueStatusHtml = isDuePaid
                 ? '<span class="due-badge paid">✓ Aidat Ödendi</span>'
                 : '<span class="due-badge unpaid">✗ Aidat Ödenmedi</span>';
+            const qualityWarnings: string[] = [];
+            if (apt.status !== 'empty') {
+                if (!apt.phone?.trim()) qualityWarnings.push('Telefon eksik');
+                if (!apt.email?.trim()) qualityWarnings.push('E-posta eksik');
+                if (!apt.password?.trim()) qualityWarnings.push('Şifre eksik');
+            }
 
             html += `
             <div class="apartment-card glass-card" data-apartment="${apt.number}">
@@ -1325,6 +1572,11 @@ function renderApartments() {
                         <span class="apt-value">${apt.residentCount || 0}</span>
                     </div>
                 </div>
+                ${qualityWarnings.length > 0 ? `
+                <div class="apt-quality-warnings">
+                    ${qualityWarnings.map(w => `<span class="apt-warning-badge">${w}</span>`).join('')}
+                </div>
+                ` : ''}
                 <div class="apt-due-status">
                     ${dueStatusHtml}
                 </div>
@@ -1713,7 +1965,7 @@ function renderResidentMaintenance() {
     }
     container.innerHTML = upcoming.map(m => `
         <div class="compact-item">
-            <h4>🔧 ${escapeHtml(m.title)}</h4>
+            <h4>🔧 ${escapeHtml(m.title)} ${(Math.abs((Date.now() - new Date(m.date).getTime()) / 86400000) <= 14) ? '<span class="resident-item-badge">Yeni</span>' : ''}</h4>
             <p>${formatDate(m.date)}</p>
         </div>
     `).join('');
@@ -1729,7 +1981,7 @@ function renderResidentTasks() {
     const statusIcons = { pending: '⏳', in_progress: '🔄' };
     container.innerHTML = active.map(t => `
         <div class="compact-item" onclick="viewTaskDetail('${t.id}')">
-            <h4>${statusIcons[t.status] || '📋'} ${escapeHtml(t.title)}</h4>
+            <h4>${statusIcons[t.status] || '📋'} ${escapeHtml(t.title)} <span class="priority-badge ${t.priority}">${PRIORITY_LABELS[t.priority]}</span></h4>
             <p>${escapeHtml(t.description)}</p>
         </div>
     `).join('');
@@ -1743,8 +1995,8 @@ function renderResidentRecentDecisions() {
         return;
     }
     container.innerHTML = recent.map(d => `
-        <div class="compact-item clickable" onclick="viewDecisionDetail('${d.id}')" style="cursor: pointer;">
-            <h4>📝 ${escapeHtml(d.title)}</h4>
+        <div class="compact-item clickable" onclick="viewDecisionDetail('${d.id}')">
+            <h4>📝 ${escapeHtml(d.title)} ${((Date.now() - new Date(d.date).getTime()) / 86400000) <= 14 ? '<span class="resident-item-badge">Yeni</span>' : ''}</h4>
             <p>${formatDate(d.date)}</p>
         </div>
     `).join('');
@@ -2065,7 +2317,10 @@ function openModal(modalId) {
 
     // Find title element for aria-labelledby
     const titleEl = modal.querySelector('.modal-header h3');
-    if (titleEl && titleEl.id) {
+    if (titleEl) {
+        if (!titleEl.id) {
+            titleEl.id = `${modalId}-title`;
+        }
         modal.setAttribute('aria-labelledby', titleEl.id);
     }
 
@@ -2096,6 +2351,7 @@ function closeModal(modalId) {
 
     // Remove ARIA on close
     modal.removeAttribute('aria-modal');
+    modal.removeAttribute('aria-labelledby');
 
     // Reset form if exists
     const form = modal.querySelector('form');
@@ -2114,6 +2370,15 @@ function closeModal(modalId) {
 
 function closeAllModals() {
     document.querySelectorAll('.modal.active').forEach(m => closeModal(m.id));
+}
+
+function setMenuState(menuId, toggleId, isOpen) {
+    const menu = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
+    if (!menu || !toggle) return;
+
+    menu.classList.toggle('active', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 
 function setupModalKeyboardTrap(modal) {
@@ -2444,15 +2709,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navigation
     document.querySelectorAll('#admin-dashboard .nav-link[data-section]').forEach(link => {
-        link.addEventListener('click', e => { e.preventDefault(); showSection((link as HTMLElement).dataset.section); document.getElementById('nav-links').classList.remove('active'); });
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            showSection((link as HTMLElement).dataset.section);
+            setMenuState('nav-links', 'mobile-menu-toggle', false);
+        });
     });
     document.querySelectorAll('#resident-dashboard .nav-link[data-section]').forEach(link => {
-        link.addEventListener('click', e => { e.preventDefault(); showSection((link as HTMLElement).dataset.section); document.getElementById('resident-nav-links').classList.remove('active'); });
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            showSection((link as HTMLElement).dataset.section);
+            setMenuState('resident-nav-links', 'resident-mobile-menu-toggle', false);
+        });
     });
 
+    const overviewAlerts = document.getElementById('overview-alerts');
+    if (overviewAlerts) {
+        overviewAlerts.addEventListener('click', (e) => {
+            const card = (e.target as HTMLElement).closest('.overview-alert-card') as HTMLElement | null;
+            if (!card) return;
+            const target = card.dataset.target;
+            if (target) showSection(target);
+        });
+    }
+
     // Mobile Menu
-    document.getElementById('mobile-menu-toggle').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('active'));
-    document.getElementById('resident-mobile-menu-toggle').addEventListener('click', () => document.getElementById('resident-nav-links').classList.toggle('active'));
+    const adminMenuToggle = document.getElementById('mobile-menu-toggle');
+    const residentMenuToggle = document.getElementById('resident-mobile-menu-toggle');
+    if (adminMenuToggle) {
+        adminMenuToggle.setAttribute('aria-controls', 'nav-links');
+        adminMenuToggle.setAttribute('aria-expanded', 'false');
+        adminMenuToggle.addEventListener('click', () => {
+            const navLinks = document.getElementById('nav-links');
+            setMenuState('nav-links', 'mobile-menu-toggle', !navLinks?.classList.contains('active'));
+        });
+    }
+    if (residentMenuToggle) {
+        residentMenuToggle.setAttribute('aria-controls', 'resident-nav-links');
+        residentMenuToggle.setAttribute('aria-expanded', 'false');
+        residentMenuToggle.addEventListener('click', () => {
+            const navLinks = document.getElementById('resident-nav-links');
+            setMenuState('resident-nav-links', 'resident-mobile-menu-toggle', !navLinks?.classList.contains('active'));
+        });
+    }
 
     // Mobile Tab Bar (Resident Dashboard)
     document.querySelectorAll('#resident-tab-bar .tab-item[data-section]').forEach(tab => {
@@ -2469,7 +2768,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabMenuToggle = document.getElementById('tab-menu-toggle');
     if (tabMenuToggle) {
         tabMenuToggle.addEventListener('click', () => {
-            document.getElementById('resident-nav-links').classList.add('active');
+            setMenuState('resident-nav-links', 'resident-mobile-menu-toggle', true);
         });
     }
 
@@ -2477,18 +2776,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuCloseBtn = document.getElementById('menu-close-btn');
     if (menuCloseBtn) {
         menuCloseBtn.addEventListener('click', () => {
-            document.getElementById('resident-nav-links').classList.remove('active');
+            setMenuState('resident-nav-links', 'resident-mobile-menu-toggle', false);
         });
     }
 
     // Close menu when clicking backdrop
     document.addEventListener('click', (e) => {
+        const adminNavLinks = document.getElementById('nav-links');
+        const adminMenuBtn = document.getElementById('mobile-menu-toggle');
+        if (adminNavLinks && adminNavLinks.classList.contains('active')) {
+            if (!adminNavLinks.contains(e.target as Node) && e.target !== adminMenuBtn && !adminMenuBtn?.contains(e.target as Node)) {
+                setMenuState('nav-links', 'mobile-menu-toggle', false);
+            }
+        }
+
         const navLinks = document.getElementById('resident-nav-links');
         const menuBtn = document.getElementById('resident-mobile-menu-toggle');
         const tabMenuBtn = document.getElementById('tab-menu-toggle');
         if (navLinks && navLinks.classList.contains('active')) {
             if (!navLinks.contains(e.target as Node) && e.target !== menuBtn && e.target !== tabMenuBtn && !menuBtn?.contains(e.target as Node) && !tabMenuBtn?.contains(e.target as Node)) {
-                navLinks.classList.remove('active');
+                setMenuState('resident-nav-links', 'resident-mobile-menu-toggle', false);
             }
         }
     });
@@ -2518,6 +2825,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bill-year-filter').addEventListener('change', renderBills);
     document.getElementById('dues-year-select').addEventListener('change', renderDuesTable);
     document.getElementById('monthly-due-amount').addEventListener('change', updateMonthlyDueAmount);
+    const duesBulkMonth = document.getElementById('dues-bulk-month') as HTMLSelectElement | null;
+    const duesUnpaidOnly = document.getElementById('dues-unpaid-only') as HTMLInputElement | null;
+    const duesMarkPaidBtn = document.getElementById('dues-mark-month-paid');
+    const duesMarkUnpaidBtn = document.getElementById('dues-mark-month-unpaid');
+    if (duesBulkMonth) {
+        duesBulkMonth.value = String(new Date().getMonth() + 1);
+        duesBulkMonth.addEventListener('change', renderDuesTable);
+    }
+    if (duesUnpaidOnly) duesUnpaidOnly.addEventListener('change', renderDuesTable);
+    if (duesMarkPaidBtn) duesMarkPaidBtn.addEventListener('click', () => setDueStatusForMonth(true));
+    if (duesMarkUnpaidBtn) duesMarkUnpaidBtn.addEventListener('click', () => setDueStatusForMonth(false));
     document.getElementById('transaction-type-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
     document.getElementById('transaction-year-filter').addEventListener('change', () => { renderTransactions(); updateFinanceSummary(); });
 
@@ -2843,12 +3161,14 @@ Apartman Yönetimi 🏢`;
 
     // Send Notification Button (opens modal)
     const sendNotificationBtn = document.getElementById('send-notification-btn');
-    if (sendNotificationBtn) {
-        sendNotificationBtn.addEventListener('click', () => {
+    const sendCustomNotificationBtn = document.getElementById('send-custom-notification-btn');
+    [sendNotificationBtn, sendCustomNotificationBtn].forEach((btn) => {
+        if (!btn) return;
+        btn.addEventListener('click', () => {
             openModal('notification-modal');
             updateNotificationPreview();
         });
-    }
+    });
 
     // Template Change Handler
     const templateSelect = document.getElementById('notification-template');
@@ -2912,7 +3232,7 @@ Apartman Yönetimi 🏢`,
             const selectedValue = (document.querySelector('input[name="recipient-type"]:checked') as HTMLInputElement)?.value;
 
             if (customGroup) {
-                customGroup.style.display = selectedValue === 'custom' ? 'block' : 'none';
+                customGroup.classList.toggle('is-hidden', selectedValue !== 'custom');
             }
 
             // Populate apartment checkboxes if custom
@@ -2990,8 +3310,8 @@ Apartman Yönetimi 🏢`,
                 // Show loading state
                 const submitBtn = document.getElementById('send-notification-submit');
                 if (submitBtn) {
-                    (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'none';
-                    (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'inline';
+                    (submitBtn.querySelector('.btn-text') as HTMLElement).classList.add('is-hidden');
+                    (submitBtn.querySelector('.btn-loading') as HTMLElement).classList.remove('is-hidden');
                     (submitBtn as HTMLButtonElement).disabled = true;
                 }
 
@@ -3040,8 +3360,8 @@ Apartman Yönetimi 🏢`,
                 } finally {
                     // Reset button state
                     if (submitBtn) {
-                        (submitBtn.querySelector('.btn-text') as HTMLElement).style.display = 'inline';
-                        (submitBtn.querySelector('.btn-loading') as HTMLElement).style.display = 'none';
+                        (submitBtn.querySelector('.btn-text') as HTMLElement).classList.remove('is-hidden');
+                        (submitBtn.querySelector('.btn-loading') as HTMLElement).classList.add('is-hidden');
                         (submitBtn as HTMLButtonElement).disabled = false;
                     }
                 }
@@ -3080,7 +3400,7 @@ Apartman Yönetimi 🏢`,
                 preview.innerHTML = `
                     <div class="file-info-chip">
                         <span>${file.name}</span>
-                        <span style="font-size: 0.8em; opacity: 0.7;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <span class="file-info-meta">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                     </div>
                 `;
             }
@@ -3101,8 +3421,8 @@ Apartman Yönetimi 🏢`,
                 if (submitBtn) {
                     const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
                     const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
-                    if (btnLoading) btnLoading.style.display = 'inline';
-                    if (btnText) btnText.style.display = 'none';
+                    if (btnLoading) btnLoading.classList.remove('is-hidden');
+                    if (btnText) btnText.classList.add('is-hidden');
                     submitBtn.disabled = true;
                 }
 
@@ -3140,8 +3460,8 @@ Apartman Yönetimi 🏢`,
                 if (submitBtn) {
                     const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
                     const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
-                    if (btnLoading) btnLoading.style.display = 'none';
-                    if (btnText) btnText.style.display = 'inline';
+                    if (btnLoading) btnLoading.classList.add('is-hidden');
+                    if (btnText) btnText.classList.remove('is-hidden');
                     submitBtn.disabled = false;
                 }
             }
@@ -3151,9 +3471,11 @@ Apartman Yönetimi 🏢`,
     // Document Filters
     const docCategoryFilter = document.getElementById('document-category-filter');
     const docSearchInput = document.getElementById('document-search');
+    const residentDocCategoryFilter = document.getElementById('resident-document-category-filter');
 
     if (docCategoryFilter) docCategoryFilter.addEventListener('change', () => renderDocuments());
     if (docSearchInput) docSearchInput.addEventListener('input', () => renderDocuments());
+    if (residentDocCategoryFilter) residentDocCategoryFilter.addEventListener('change', () => renderResidentDocuments());
 
     // Document Delete (Event Delegation)
     const documentsList = document.getElementById('documents-list');
@@ -3215,25 +3537,28 @@ function renderDocuments() {
     }
 
     list.innerHTML = docs.map(doc => `
-        <div class="transaction-item document-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-color);">
-            <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
-                <div class="doc-icon" style="font-size: 24px; background: var(--bg-hover); padding: 8px; border-radius: 8px;">
+        <div class="transaction-item document-item">
+            <div class="document-item-main">
+                <div class="doc-icon">
                     ${getDocumentIcon(doc.fileType)}
                 </div>
-                <div>
-                    <h4 style="margin: 0; font-weight: 500;">${doc.title}</h4>
-                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                <div class="document-item-content">
+                    <h4>${doc.title}</h4>
+                    <div class="document-item-meta">
                         ${new Date(doc.uploadedAt).toLocaleDateString('tr-TR')} • ${(doc.fileSize / 1024 / 1024).toFixed(2)} MB • ${getCategoryLabel(doc.category)}
                     </div>
-                    ${doc.description ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${doc.description}</div>` : ''}
+                    ${doc.description ? `<div class="document-item-description">${doc.description}</div>` : ''}
                 </div>
             </div>
-            <div class="doc-actions" style="display: flex; gap: 8px;">
-                <a href="${doc.fileUrl}" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration: none;">
+            <div class="doc-actions">
+                <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary document-download-link">
+                    👁 Önizle
+                </a>
+                <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary document-download-link">
                     ⬇️ İndir
                 </a>
                 ${AppState.currentUser.role === 'admin' ? `
-                <button class="btn btn-sm btn-danger delete-doc-btn" data-id="${doc.id}" style="padding: 6px 10px;">
+                <button class="btn btn-sm btn-danger delete-doc-btn" data-id="${doc.id}">
                     🗑️
                 </button>
                 ` : ''}
@@ -3329,21 +3654,21 @@ function renderNotificationHistory() {
     }
 
     list.innerHTML = history.map(item => `
-        <div class="transaction-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-color);">
-            <div style="flex: 1;">
-                <div style="font-weight: 500;">
+        <div class="transaction-item notification-history-item">
+            <div class="notification-history-main">
+                <div class="notification-history-title">
                     ${item.templateType === 'due_reminder' ? '💰 Aidat Hatırlatma' :
             item.templateType === 'general_message' ? '📢 Genel Duyuru' :
                 item.templateType === 'maintenance_notice' ? '🔧 Bakım Bildirimi' : '💬 Özel Mesaj'}
                 </div>
-                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                <div class="notification-history-meta">
                     ${new Date(item.sentAt).toLocaleString('tr-TR')} • ${item.recipientCount} Alıcı
                 </div>
-                <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                <div class="notification-history-message">
                     ${item.message.substring(0, 50)}${item.message.length > 50 ? '...' : ''}
                 </div>
             </div>
-            <div class="status-badge ${item.failedCount === 0 ? 'status-paid' : 'status-unpaid'}" style="margin-left: 12px;">
+            <div class="status-badge ${item.failedCount === 0 ? 'status-paid' : 'status-unpaid'} notification-history-status">
                 ${item.successCount} Başarılı / ${item.failedCount} Hata
             </div>
         </div>

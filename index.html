@@ -38,7 +38,7 @@
 </head>
 
 <body>
-    <a href="#main-content" class="skip-link">Ana içeriğe atla</a>
+    <a href="#main-content" class="skip-link" id="skip-to-main-link">Ana içeriğe atla</a>
     <!-- Custom Cursor -->
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
@@ -301,6 +301,10 @@
                         </div>
                     </div>
 
+                    <div class="overview-alerts" id="overview-alerts">
+                        <p class="empty-state">Acil durum bulunmuyor</p>
+                    </div>
+
                     <div class="dashboard-grid">
                         <div class="dashboard-card glass-card">
                             <h3>📋 Son Kararlar</h3>
@@ -370,6 +374,7 @@
                             </select>
                         </div>
                     </div>
+                    <div id="transaction-active-filters" class="active-filter-chips"></div>
 
                     <!-- Transactions List -->
                     <div class="transactions-container">
@@ -472,6 +477,36 @@
                                     <span>₺</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="dues-control-bar">
+                        <div class="dues-control-group">
+                            <label for="dues-bulk-month">Ay:</label>
+                            <select id="dues-bulk-month" class="year-select">
+                                <option value="1">Ocak</option>
+                                <option value="2">Şubat</option>
+                                <option value="3">Mart</option>
+                                <option value="4">Nisan</option>
+                                <option value="5">Mayıs</option>
+                                <option value="6">Haziran</option>
+                                <option value="7">Temmuz</option>
+                                <option value="8">Ağustos</option>
+                                <option value="9">Eylül</option>
+                                <option value="10">Ekim</option>
+                                <option value="11">Kasım</option>
+                                <option value="12">Aralık</option>
+                            </select>
+                        </div>
+                        <div class="dues-control-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="dues-unpaid-only">
+                                <span>Sadece borçlu daireleri göster</span>
+                            </label>
+                        </div>
+                        <div class="dues-control-group dues-control-actions">
+                            <button class="btn btn-secondary btn-sm" id="dues-mark-month-paid">Ayı Toplu Ödendi İşaretle</button>
+                            <button class="btn btn-secondary btn-sm" id="dues-mark-month-unpaid">Ayı Toplu Ödenmedi İşaretle</button>
                         </div>
                     </div>
 
@@ -725,23 +760,23 @@
                     </div>
 
                     <!-- GREEN-API Configuration -->
-                    <div class="transactions-container" style="margin-bottom: 24px;">
-                        <div class="config-card glass-card">
+                    <div class="transactions-container section-block">
+                        <div class="config-card glass-card greenapi-config">
                             <h4>⚙️ GREEN-API Yapılandırması</h4>
                             <p class="config-info">WhatsApp bildirimleri göndermek için GREEN-API hesabı gereklidir.</p>
                             <div class="form-row">
-                                <div class="form-group" style="flex: 1;">
+                                <div class="form-group flex-1">
                                     <label for="greenapi-instance">Instance ID</label>
                                     <input type="text" id="greenapi-instance" placeholder="1234567890"
                                         autocomplete="off">
                                 </div>
-                                <div class="form-group" style="flex: 2;">
+                                <div class="form-group flex-2">
                                     <label for="greenapi-token">API Token</label>
                                     <input type="password" id="greenapi-token" placeholder="xxxxxxxxxxxxxxxxxxxxxxx"
                                         autocomplete="off">
                                 </div>
                             </div>
-                            <div class="form-row" style="gap: 8px; margin-top: 12px;">
+                            <div class="form-row greenapi-actions">
                                 <button class="btn btn-secondary" id="test-greenapi-btn">🔗 Bağlantıyı Test Et</button>
                                 <button class="btn btn-primary" id="save-greenapi-btn">💾 Kaydet</button>
                             </div>
@@ -773,48 +808,32 @@
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="transactions-container" style="margin-bottom: 24px;">
-                        <h4 style="margin-bottom: 16px;">⚡ Hızlı Eylemler</h4>
-                        <div class="quick-actions-grid"
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-                            <button class="quick-action-card" id="send-due-reminder-btn"
-                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);">
-                                <div
-                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                                    💰</div>
-                                <div style="text-align: left; flex: 1;">
-                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
-                                        Aidat Hatırlatma</div>
-                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Ödenmemiş aidatları
-                                        hatırlat</div>
+                    <div class="transactions-container section-block">
+                        <h4 class="quick-actions-title">⚡ Hızlı Eylemler</h4>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-card quick-action-card-reminder" id="send-due-reminder-btn">
+                                <div class="quick-action-icon">💰</div>
+                                <div class="quick-action-content">
+                                    <div class="quick-action-name">Aidat Hatırlatma</div>
+                                    <div class="quick-action-desc">Ödenmemiş aidatları hatırlat</div>
                                 </div>
-                                <div style="color: white; font-size: 20px;">→</div>
+                                <div class="quick-action-arrow">→</div>
                             </button>
-                            <button class="quick-action-card" id="send-general-announcement-btn"
-                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                                <div
-                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                                    📢</div>
-                                <div style="text-align: left; flex: 1;">
-                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
-                                        Genel Duyuru</div>
-                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Tüm sakinlere mesaj
-                                        gönder</div>
+                            <button class="quick-action-card quick-action-card-announce" id="send-general-announcement-btn">
+                                <div class="quick-action-icon">📢</div>
+                                <div class="quick-action-content">
+                                    <div class="quick-action-name">Genel Duyuru</div>
+                                    <div class="quick-action-desc">Tüm sakinlere mesaj gönder</div>
                                 </div>
-                                <div style="color: white; font-size: 20px;">→</div>
+                                <div class="quick-action-arrow">→</div>
                             </button>
-                            <button class="quick-action-card" id="send-notification-btn"
-                                style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
-                                <div
-                                    style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                                    ✍️</div>
-                                <div style="text-align: left; flex: 1;">
-                                    <div style="font-weight: 600; font-size: 16px; color: white; margin-bottom: 4px;">
-                                        Özel Mesaj</div>
-                                    <div style="font-size: 13px; color: rgba(255,255,255,0.85);">Kendi mesajını oluştur
-                                    </div>
+                            <button class="quick-action-card quick-action-card-custom" id="send-custom-notification-btn">
+                                <div class="quick-action-icon">✍️</div>
+                                <div class="quick-action-content">
+                                    <div class="quick-action-name">Özel Mesaj</div>
+                                    <div class="quick-action-desc">Kendi mesajını oluştur</div>
                                 </div>
-                                <div style="color: white; font-size: 20px;">→</div>
+                                <div class="quick-action-arrow">→</div>
                             </button>
                         </div>
                     </div>
@@ -839,7 +858,7 @@
                     <span class="apartment-badge" id="resident-apartment-badge">Daire 1</span>
                 </div>
 
-                <button class="mobile-menu-btn" id="resident-mobile-menu-toggle">
+                <button class="mobile-menu-btn" id="resident-mobile-menu-toggle" aria-label="Menüyü aç">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -921,7 +940,7 @@
                 </div>
             </nav>
 
-            <main class="main-content">
+            <main class="main-content" id="resident-main-content">
                 <!-- Resident Overview - Enhanced Dashboard -->
                 <section id="resident-overview-section" class="section active">
                     <div class="section-header">
@@ -930,7 +949,7 @@
                     </div>
 
                     <!-- Aidat Durumu -->
-                    <div class="resident-stats-grid" style="margin-bottom: 48px;">
+                    <div class="resident-stats-grid resident-gap-lg">
                         <div class="stat-card glass-card gradient-2 large-card">
                             <div class="stat-icon">💰</div>
                             <div class="stat-info">
@@ -943,25 +962,23 @@
                     </div>
 
                     <!-- Charts Row: Aidat Tahsilat + Financial Status -->
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 64px; margin-bottom: 48px;">
-                        <div
-                            style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                    <div class="overview-charts-grid">
+                        <div class="overview-chart-card">
                             <div class="chart-header">
                                 <h3>📊 Aidat Tahsilat Durumu</h3>
                             </div>
-                            <div class="chart-wrapper" style="height: 240px;">
+                            <div class="chart-wrapper chart-wrapper-sm">
                                 <canvas id="dues-collection-chart"></canvas>
                             </div>
                         </div>
-                        <div
-                            style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                        <div class="overview-chart-card">
                             <div class="chart-header">
                                 <h3>📈 Finansal Durum</h3>
                             </div>
-                            <div class="chart-wrapper" style="height: 240px;">
+                            <div class="chart-wrapper chart-wrapper-sm">
                                 <canvas id="financial-status-chart"></canvas>
                             </div>
-                            <div class="chart-summary" style="margin-top: 24px;">
+                            <div class="chart-summary chart-summary-top">
                                 <div class="chart-stat balance">
                                     <span class="chart-stat-icon">💰</span>
                                     <div class="chart-stat-info">
@@ -974,7 +991,7 @@
                     </div>
 
                     <!-- Yıllık Aidat Özeti -->
-                    <div class="transactions-container" style="margin-bottom: 24px;">
+                    <div class="transactions-container section-block">
                         <div class="chart-header">
                             <h3>📊 Yıllık Aidat Özeti (<span id="resident-year">2026</span>)</h3>
                             <div class="chart-legend">
@@ -1014,7 +1031,7 @@
                     </div>
 
                     <!-- Bottom Cards: Maintenance + Tasks + Decisions -->
-                    <div class="dashboard-grid-3" style="margin-top: 24px;">
+                    <div class="dashboard-grid-3 section-top-space">
                         <div class="transactions-container">
                             <div class="chart-header">
                                 <h3>🔧 Periyodik Bakımlar</h3>
@@ -1214,7 +1231,7 @@
             <div class="modal-content glass-card modal-large">
                 <div class="modal-header">
                     <h3 id="notification-modal-title">📱 Bildirim Gönder</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="notification-form" class="modal-form">
                     <!-- Template Selection -->
@@ -1257,7 +1274,7 @@
                     </div>
 
                     <!-- Custom Recipients (shown when custom is selected) -->
-                    <div class="form-group" id="custom-recipients-group" style="display: none;">
+                    <div class="form-group is-hidden" id="custom-recipients-group">
                         <label>Daire Seçimi</label>
                         <div class="apartment-checkboxes" id="apartment-checkboxes">
                             <!-- Generated by JavaScript -->
@@ -1267,13 +1284,13 @@
                     <!-- Preview -->
                     <div class="form-group">
                         <label>Önizleme</label>
-                        <div class="message-preview glass-card" id="message-preview" style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
-                            <p id="notification-preview-text" style="white-space: pre-wrap; margin: 0;">Mesaj önizlemesi burada görünecek...</p>
+                        <div class="message-preview glass-card" id="message-preview">
+                            <p id="notification-preview-text" class="notification-preview-text">Mesaj önizlemesi burada görünecek...</p>
                         </div>
                     </div>
 
                     <!-- Recipient Count -->
-                    <div class="notification-stats" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div class="notification-stats">
                         <div class="stat-item">
                             <span class="label">Alıcı Sayısı:</span>
                             <span id="recipient-count" class="value">0</span>
@@ -1284,7 +1301,7 @@
                         <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
                         <button type="submit" class="btn btn-primary" id="send-notification-submit">
                             <span class="btn-text">📤 Gönder</span>
-                            <span class="btn-loading" style="display: none;">Gönderiliyor...</span>
+                            <span class="btn-loading is-hidden">Gönderiliyor...</span>
                         </button>
                     </div>
                 </form>
@@ -1297,7 +1314,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="document-modal-title">Döküman Yükle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="document-form" class="modal-form">
                     <div class="form-group">
@@ -1343,7 +1360,7 @@
                         <button type="button" class="btn btn-secondary modal-cancel">İptal</button>
                         <button type="submit" class="btn btn-primary">
                             <span class="btn-text">Yükle</span>
-                            <span class="btn-loading" style="display: none;">Yükleniyor...</span>
+                            <span class="btn-loading is-hidden">Yükleniyor...</span>
                         </button>
                     </div>
                 </form>
@@ -1356,7 +1373,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="bill-modal-title">Fatura Ekle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="bill-form" class="modal-form">
                     <input type="hidden" id="bill-id">
@@ -1426,7 +1443,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="decision-modal-title">Karar Ekle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="decision-form" class="modal-form">
                     <input type="hidden" id="decision-id">
@@ -1457,7 +1474,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="transaction-modal-title">Gelir/Gider Ekle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="transaction-form" class="modal-form">
                     <input type="hidden" id="transaction-id">
@@ -1514,7 +1531,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="maintenance-modal-title">Bakım Ekle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="maintenance-form" class="modal-form">
                     <input type="hidden" id="maintenance-id">
@@ -1552,24 +1569,21 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3>📝 Karar Detayı</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 24px;">
+                <div class="modal-body decision-detail-modal-body">
                     <div class="decision-detail-content">
-                        <h4 id="decision-detail-title"
-                            style="font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary);">
+                        <h4 id="decision-detail-title" class="decision-detail-title">
                         </h4>
-                        <div
-                            style="display: flex; gap: 16px; margin-bottom: 20px; color: var(--text-secondary); font-size: 14px;">
+                        <div class="decision-detail-meta">
                             <span id="decision-detail-date">📅 </span>
                         </div>
-                        <div id="decision-detail-content"
-                            style="background: var(--bg-main); padding: 20px; border-radius: 12px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">
+                        <div id="decision-detail-content" class="decision-detail-text">
                         </div>
                     </div>
                 </div>
-                <div class="modal-actions" style="padding: 16px 24px; border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary modal-close" style="width: 100%;">Kapat</button>
+                <div class="modal-actions decision-detail-actions">
+                    <button type="button" class="btn btn-secondary modal-close btn-full">Kapat</button>
                 </div>
             </div>
         </div>
@@ -1580,7 +1594,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="task-modal-title">İş Ekle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="task-form" class="modal-form">
                     <input type="hidden" id="task-id">
@@ -1628,7 +1642,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3>İş Detayı</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <div class="modal-body" id="task-detail-content">
                     <!-- Dynamically filled -->
@@ -1642,7 +1656,7 @@
             <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3 id="apartment-modal-title">Daire Düzenle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <form id="apartment-form" class="modal-form">
                     <input type="hidden" id="apartment-id">
@@ -1722,15 +1736,14 @@
             <div class="modal-content glass-card modal-large">
                 <div class="modal-header">
                     <h3 id="apartment-detail-title">🏠 Daire Detayı</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 24px;">
+                <div class="modal-body apartment-detail-modal-body">
                     <div id="apartment-detail-content">
                         <!-- Dynamically filled -->
                     </div>
                 </div>
-                <div class="modal-actions"
-                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); gap: 12px;">
+                <div class="modal-actions apartment-detail-actions">
                     <button type="button" class="btn btn-secondary modal-close">Kapat</button>
                     <button type="button" class="btn btn-primary" id="apartment-detail-edit-btn">✏️ Düzenle</button>
                 </div>
@@ -1743,7 +1756,7 @@
             <div class="modal-content glass-card large-modal">
                 <div class="modal-header">
                     <h3>Fatura Görüntüle</h3>
-                    <button class="modal-close">&times;</button>
+                    <button class="modal-close" aria-label="Pencereyi kapat">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div id="bill-viewer" class="bill-viewer">
