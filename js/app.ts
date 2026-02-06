@@ -444,8 +444,8 @@ function refreshSection(sectionId) {
 }
 
 // ===== Authentication (Using AuthService) =====
-async function loginAdmin(password: string): Promise<boolean> {
-    const success = await AuthService.loginAdmin(password);
+async function loginAdmin(password: string, adminEmail?: string): Promise<boolean> {
+    const success = await AuthService.loginAdmin(password, adminEmail);
     if (success) {
         showPage('admin-dashboard');
         await initializeData();
@@ -2361,6 +2361,11 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     initEmailJS();
 
+    const adminEmailInput = document.getElementById('admin-email') as HTMLInputElement | null;
+    if (adminEmailInput && !adminEmailInput.value) {
+        adminEmailInput.value = APP_CONFIG.ADMIN_EMAIL || '';
+    }
+
     // Login Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2385,7 +2390,8 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true;
 
             const password = (document.getElementById('admin-password') as HTMLInputElement).value;
-            const success = await loginAdmin(password);
+            const adminEmail = (document.getElementById('admin-email') as HTMLInputElement)?.value?.trim();
+            const success = await loginAdmin(password, adminEmail);
 
             if (!success) {
                 showToast('Şifre hatalı veya giriş başarısız. Lütfen tekrar deneyin.', 'error');

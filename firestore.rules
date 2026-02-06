@@ -13,7 +13,10 @@ service cloud.firestore {
     
     // Check if user is admin (custom claim)
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
     
     // Validate data is not empty
@@ -66,7 +69,7 @@ service cloud.firestore {
       allow create: if isAdmin() &&
         request.resource.data.keys().hasAll(['type', 'amount', 'month', 'year']) &&
         isPositiveNumber(request.resource.data.amount) &&
-        request.resource.data.type in ['electric', 'water', 'gas', 'internet', 'other'];
+        request.resource.data.type in ['elektrik', 'su', 'dogalgaz', 'other', 'electric', 'water', 'gas', 'internet'];
         
       allow update: if isAdmin() && withinWriteLimit();
       allow delete: if isAdmin();
@@ -179,8 +182,8 @@ service cloud.firestore {
     // Admins Collection (Protected)
     // =========================================
     match /admins/{adminId} {
-      // Only admins can read admin list
-      allow read: if isAdmin();
+      // Admin can read all, authenticated user can only read own admin doc
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == adminId);
       
       // Only existing admins can create new admins
       allow create: if isAdmin();

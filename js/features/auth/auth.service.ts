@@ -88,9 +88,14 @@ export const AuthService = {
      * Login as admin using Firebase Authentication
      * Enhanced with rate limiting and audit logging
      */
-    async loginAdmin(password: string): Promise<boolean> {
-        const email = APP_CONFIG.ADMIN_EMAIL;
+    async loginAdmin(password: string, emailOverride?: string): Promise<boolean> {
+        const email = (emailOverride || APP_CONFIG.ADMIN_EMAIL || '').trim().toLowerCase();
         const deviceId = this.getDeviceFingerprint();
+
+        if (!email) {
+            toastError('Yönetici e-posta adresi gerekli.');
+            return false;
+        }
         
         // Check rate limiting
         if (isAccountLocked(email)) {
